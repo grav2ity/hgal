@@ -3,7 +3,35 @@
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
-module Hgal.Data.SurfaceMesh where
+module Hgal.Data.SurfaceMesh
+  ( -- * Types
+    SurfaceMesh
+  , Element(..)
+  , Vertex(..)
+  , Halfedge(..)
+  , Edge(..)
+  , Face(..)
+    -- * Accessors
+  , numVertices
+  , numHalfedges
+  , numEdges
+  , numFaces
+  , vertices
+  , halfedges
+  , edges
+  , faces
+  , points
+  , pointProperties
+    -- * Construction
+    -- $construction
+  , empty
+  , addVertex
+  , addEdge
+  , addFace
+  , newFace
+  , newVertex
+  ) where
+
 
 import Control.Exception
 import Control.Lens hiding (point)
@@ -38,6 +66,12 @@ import Data.Map (Map)
 
 data family Connectivity a :: *
 
+{- | Convenience class for SurfaceMesh's graph elements.
+
+Each element is associated with a halfedge.
+
+
+-}
 class Element a where
   name :: a -> String
 
@@ -82,6 +116,14 @@ class Element a where
   face :: SurfaceMesh v d -> a -> Face
   face sm = face sm . halfedge sm
 
+  {- | Next vertex in a loop.
+
+  Next halfegde in a loop.
+
+  Next edge in a loop.
+
+  Next face in a loop. (same if graph is correct)
+  -}
   next :: SurfaceMesh v d -> a -> a
   prev :: SurfaceMesh v d -> a -> a
 
@@ -103,6 +145,15 @@ newtype Face = Face Int
     deriving newtype (Bits, Integral, Num, Real)
 instance Wrapped Face
 
+{- | Halfedge graph based Mesh data structure
+
+holding point data v assocaited with Vertex
+
+and arbitrary data sore d with additional
+
+properties for Vertices, Halfedges, Edges and Faces
+
+-}
 data SurfaceMesh v d = SurfaceMesh
   { _vconn :: Seq (Connectivity Vertex)
   , _hconn :: Seq (Connectivity Halfedge)
@@ -300,32 +351,49 @@ faces :: SurfaceMesh v d -> [Face]
 faces sm = Prelude.filter (not . isRemoved sm) $
            Face <$> [0..numFaces sm - 1]
 
+points :: Eq v => SurfaceMesh v d -> [Maybe v]
+points = toList . pointProperties
+
 -------------------------------------------------------------------------------
 -- Adding elements
 
+{- | Allocate and return a Vertex.
+-}
 addVertex :: SurfaceMesh v d -> (Vertex, SurfaceMesh v d)
 addVertex sm =
   let sm' = vconn %~ (snoc ?? VertexConnectivity nullE) $ sm
       sm'' = vpoint %~ (snoc ?? Nothing) $ sm'
   in (new sm, sm'')
 
+{- | Allocate and return an Edge.
+-}
 addEdge :: SurfaceMesh v d -> (Edge, SurfaceMesh v d)
 addEdge sm =
   let addh = (snoc ?? HalfedgeConnectivity nullE nullE nullE nullE)
       sm' = hconn %~ (addh . addh) $ sm
   in (new sm, sm')
 
+{- | Allocate and return a Face.
+
+This does not update graph connectivity.
+-}
 addFace :: SurfaceMesh v d -> (Face, SurfaceMesh v d)
 addFace sm =
   let sm' = fconn %~ (snoc ?? FaceConnectivity nullE) $ sm
   in (new sm, sm')
 
+{- | Allocate and return a Vertex with point properites v.
+-}
 newVertex :: SurfaceMesh v d -> v -> (SurfaceMesh v d, Vertex)
 newVertex sm v =
   --that's not exactly right
   let (n, sm') = addVertex sm
   in (vpoint %~ (\(vs :|> _) -> vs :|> Just v) $ sm', n)
 
+{- | Create Face from Vertices already present in the Mesh.
+
+This does update graph connectivity.
+-}
 newFace :: Foldable t => SurfaceMesh v d -> t Vertex -> (SurfaceMesh v d, Face)
 newFace sm vs = swap $ Euler.addFace sm vs
 
@@ -694,7 +762,7 @@ foo =
             v2 <- GraphM.addVertex sm
             v3 <- GraphM.addVertex sm
             EulerM.addFace sm [v1, v2, v3]
-            return ()
+            -- return ()
   in execState f sm
 
 foo1 :: SurfaceMesh () ()
@@ -727,3 +795,19 @@ foo2 =
             -- propertyOf (Edge 0) ?= Map.fromList [("foo", "bar")]
             -- (propertyOf (Edge 0)._Just.at "foo") ?= "alice"
   in execState f sm
+
+{- $construction
+
+These are fairly low-level functions.
+
+Most of the time you will want to use "Hgal.Graph.ClassM" and "Hgal.Graph.EulerOperationsM" instead.
+
+==== __Examples__
+
+>>> vs = [V3 0 0 0, V3 1 0 0, V3 0 1 0, V3 1 1 0, V3 2 0 0]
+>>> (sm, [u, v, w, x, y]) = mapAccumL newVertex (empty ()) vs
+>>> (sm', f) = mapAccumL newFace sm [[u, w, v], [v, w, x], [v, x, y]]
+
+
+
+-}
