@@ -20,9 +20,9 @@ import qualified Hgal.Data.SurfaceMesh as SurfaceMesh
 test_Predicates :: IO TestTree
 test_Predicates = do
   specs <- concat <$> mapM testSpecs
-           [ testSimple @Double @(SurfaceMesh (V3 Double) ())
-           , testValidity @Double @(SurfaceMesh (V3 Double) ()) (SurfaceMesh.empty ())
-           , testValidity2 @Double @(SurfaceMesh (V3 Double) ()) (SurfaceMesh.empty ())
+           [ testSimple @Double @(SurfaceMesh (V3 Double) () () ())
+           , testValidity @Double @(SurfaceMesh (V3 Double) () () ()) (SurfaceMesh.empty)
+           , testValidity2 @Double @(SurfaceMesh (V3 Double) () () ()) (SurfaceMesh.empty)
            ]
   return $ testGroup "Predicates" [testGroup "Static fixture tests" specs]
 

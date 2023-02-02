@@ -9,6 +9,7 @@ import Data.Maybe
 import Linear (V3(..))
 
 import Hgal.Data.Property
+import qualified Hgal.Data.PropertyM as M
 import Hgal.Data.SurfaceMesh (SurfaceMesh)
 import qualified Hgal.Data.SurfaceMesh as SurfaceMesh
 import qualified Hgal.Data.SurfaceMesh.IO as SurfaceMesh.IO
@@ -19,7 +20,7 @@ import Hgal.Graph.Loops
 class FromOFF a where
   fromOFF :: String -> IO a
 
-instance (Num a, Read a) => FromOFF (SurfaceMesh (V3 a) ()) where
+instance (Num a, Read a) => FromOFF (SurfaceMesh (V3 a) () () ()) where
   fromOFF = SurfaceMesh.IO.fromOFF
 
 data FaceFixture g v h e f = FaceFixture
@@ -37,14 +38,14 @@ class
   ( FromOFF g,
     MutableFaceGraph g v h e f,
     M.MutableFaceGraph (State g) g v h e f,
-    PointGraph g v (V3 a),
-    M.PointGraph (State g) g v (V3 a),
+    Property g v (V3 a),
+    M.Property (State g) g v (V3 a),
     Eq a, Num a,
     Eq v, Eq h, Eq f, Show v, Show h, Show f
   ) => SurfaceFixtureC a g v h e f p | g -> v, g -> h, g -> e, g -> f, g -> p
 
 instance (Eq a, Num a, Read a) => SurfaceFixtureC a
-  (SurfaceMesh (V3 a) ())
+  (SurfaceMesh (V3 a) () () ())
   SurfaceMesh.Vertex
   SurfaceMesh.Halfedge
   SurfaceMesh.Edge
@@ -55,7 +56,7 @@ surfaceFixture1 :: SurfaceFixtureC a g v h e f p
                 => IO (FaceFixture g v h e f)
 surfaceFixture1 = do
   g <- fromOFF "test/Hgal/Meshes/fixture1.off"
-  let [u, v, w, x, y] = (\(Point a) -> a) . fromJust . find g <$>
+  let [u, v, w, x, y] = fromJust . find g <$>
         [V3 0 0 0, V3 1 0 0, V3 0 1 0, V3 1 1 0, V3 2 0 0]
       f1 = let h = halfedge g u
            in if isBorder g h then face g (opposite g h) else face g h
@@ -69,7 +70,7 @@ surfaceFixture2 :: forall a g v h e f p. SurfaceFixtureC a g v h e f p
                 => IO (FaceFixture g v h e f)
 surfaceFixture2 = do
   g <- fromOFF "test/Hgal/Meshes/fixture2.off"
-  let [u, v, w, x, y] = (\(Point a) -> a) . fromJust . find g <$>
+  let [u, v, w, x, y] = fromJust . find g <$>
         [V3 0 2 0, V3 2 2 0, V3 0 0 0, V3 2 0 0, V3 1 1 0]
       hs = fromJust . uncurry (halfedgeVV @g @v @h g) <$>
         [(x, v), (v, u), (u, w), (w, x)]
@@ -80,7 +81,7 @@ surfaceFixture3 :: SurfaceFixtureC a g v h e f p
                 => IO (FaceFixture g v h e f)
 surfaceFixture3 = do
   g <- fromOFF "test/Hgal/Meshes/fixture3.off"
-  let [u, v, w, x, y, z] = (\(Point a) -> a) . fromJust . find g <$>
+  let [u, v, w, x, y, z] = fromJust . find g <$>
         [V3 0 1 0, V3 0 0 0, V3 1 0 0, V3 1 1 0, V3 2 0 0, V3 2 1 0]
       f1 = let h = halfedge g u
            in if isBorder g h then face g (opposite g h) else face g h
@@ -92,7 +93,7 @@ surfaceFixture4 :: SurfaceFixtureC a g v h e f p
                 => IO (HalfedgeFixture g v h e f)
 surfaceFixture4 = do
   g <- fromOFF "test/Hgal/Meshes/fixture4.off"
-  let [v1, v2] = (\(Point a) -> a) <$> findKeys g (== V3 0 0 0)
+  let [v1, v2] = findKeys g (== V3 0 0 0)
       h1 = fromJust $
            findOf traversed (\x -> isBorder g x && target g x == v1 )
            (halfedges g)
@@ -105,8 +106,8 @@ surfaceFixture5 :: SurfaceFixtureC a g v h e f p
                 => IO (HalfedgeFixture g v h e f)
 surfaceFixture5 = do
   g <- fromOFF "test/Hgal/Meshes/add_face_to_border.off"
-  let v1 = fromJust $ (\(Point a) -> a) <$> find g (V3 2 1 0)
-      v2 = fromJust $ (\(Point a) -> a) <$> find g (V3 2 (-1) 0)
+  let v1 = fromJust $ find g (V3 2 1 0)
+      v2 = fromJust $ find g (V3 2 (-1) 0)
       h1 = fromJust $
            findOf traversed (\x -> isBorder g x && target g x == v1 )
            (halfedges g)
@@ -134,9 +135,9 @@ surfaceFixture8 :: SurfaceFixtureC a g v h e f p
                 => IO (HalfedgeFixture g v h e f)
 surfaceFixture8 = do
   g <- fromOFF "test/Hgal/Meshes/fixture5.off"
-  let v1 = fromJust $ (\(Point a) -> a) <$> find g (V3 0 0 0)
-      v2 = fromJust $ (\(Point a) -> a) <$> find g (V3 1 0 0)
-      v3 = fromJust $ (\(Point a) -> a) <$> find g (V3 0 1 0)
+  let v1 = fromJust $ find g (V3 0 0 0)
+      v2 = fromJust $ find g (V3 1 0 0)
+      v3 = fromJust $ find g (V3 0 1 0)
       h1 = fromJust $
            findOf traversed (\x -> source g x == v1 && target g x == v2)
            (halfedges g)

@@ -8,7 +8,6 @@ import Data.Vector ((!))
 import qualified Data.Vector as V
 import Linear
 
-import Hgal.Graph.Class (Point(..))
 import Hgal.Graph.ClassM
 import Hgal.Data.PropertyM
 import qualified Hgal.Graph.EulerOperationsM as Euler
@@ -19,7 +18,7 @@ import qualified Hgal.Graph.EulerOperationsM as Euler
   with its vertices initialized to `p0`, `p1` and `p2`, and adds it to the graph `g`.
 -}
 makeTriangle :: MutableFaceGraph m g v h e f
-             => PointGraph m g v p
+             => Property m g v p
              => g
              -> p   -- ^ p0
              -> p   -- ^ p1
@@ -61,9 +60,9 @@ makeTriangle g p0 p1 p2 = do
   setFace h1' nullF
   setFace h2' nullF
 
-  replaceProperty g (Point v0) p0
-  replaceProperty g (Point v1) p1
-  replaceProperty g (Point v2) p2
+  replaceProperty g v0 p0
+  replaceProperty g v1 p1
+  replaceProperty g v2 p2
 
   opposite h2'
 
@@ -72,7 +71,7 @@ makeTriangle g p0 p1 p2 = do
   with its vertices initialized to `p0`, `p1`, `p2` and `p3`, and adds it to the graph `g`.
 -}
 makeQuad :: MutableFaceGraph m g v h e f
-         => PointGraph m g v p
+         => Property m g v p
          => g
          -> p   -- ^ p0
          -> p   -- ^ p1
@@ -84,10 +83,10 @@ makeQuad g p0 p1 p2 p3 = do
   v1 <- addVertex g
   v2 <- addVertex g
   v3 <- addVertex g
-  replaceProperty g (Point v0) p0
-  replaceProperty g (Point v1) p1
-  replaceProperty g (Point v2) p2
-  replaceProperty g (Point v3) p3
+  replaceProperty g v0 p0
+  replaceProperty g v1 p1
+  replaceProperty g v2 p2
+  replaceProperty g v3 p3
   formQuad g v0 v1 v2 v3
 
 formQuad :: MutableFaceGraph m g v h e f
@@ -140,7 +139,7 @@ formQuad g v0 v1 v2 v3 = do
   with its vertices initialized to `p0`, `p1`, `p2`, and `p3`, and adds it to the graph `g`.
 -}
 makeTetrahedron :: MutableFaceGraph m g v h e f
-                => PointGraph m g v p
+                => Property m g v p
                 => g
                 -> p   -- ^ p0
                 -> p   -- ^ p1
@@ -216,10 +215,10 @@ makeTetrahedron g p0 p1 p2 p3 = do
   setFace h5 f4
   (setFace ?? f4) =<< opposite h3
 
-  replaceProperty g (Point v0) p0
-  replaceProperty g (Point v1) p2 -- this and the next line are switched to reorient the surface
-  replaceProperty g (Point v2) p1
-  replaceProperty g (Point v3) p2
+  replaceProperty g v0 p0
+  replaceProperty g v1 p2 -- this and the next line are switched to reorient the surface
+  replaceProperty g v2 p1
+  replaceProperty g v3 p2
 
   opposite h2'
 
@@ -228,7 +227,7 @@ makeTetrahedron g p0 p1 p2 p3 = do
   `p0`, `p1`, ... , and `p7`, and adds it to the graph `g`.
 -}
 makeHexahedron :: MutableFaceGraph m g v h e f
-               => PointGraph m g v p
+               => Property m g v p
                => Eq h
                => g
                -> p   -- ^ p0
@@ -264,7 +263,7 @@ makeHexahedron g p0 p1 p2 p3 p4 p5 p6 p7 = do
   (_, hb') <- foldM worker (ht, hb) [0..3]
   hb'' <- foldM worker2 hb' [0..3]
 
-  mapM_ (uncurry $ replaceProperty g) (zip (Point <$> vs) [p0, p1, p2, p3, p4, p5, p6, p7])
+  mapM_ (uncurry $ replaceProperty g) (zip vs [p0, p1, p2, p3, p4, p5, p6, p7])
 
   (next <=< next) hb''
 
@@ -275,7 +274,7 @@ makeHexahedron g p0 p1 p2 p3 p4 p5 p6 p7 = do
   If `center` is zero, then _xyz of the first point of the prism is (V3 radius height 0).
 -}
 makeRegularPrism :: MutableFaceGraph m g v h e f
-                 => PointGraph m g v (p a)
+                 => Property m g v (p a)
                  => (Ord v, Eq h, Eq f)
                  => (Floating a, R3 p)
                  => g
@@ -296,8 +295,8 @@ makeRegularPrism g n center height radius isClosed = do
         p1 = center & _x +~ (radius * cos (i' * step))
                     & _z -~ (radius * sin (i' * step))
         p2 = p1 & _y +~ height
-    replaceProperty g (Point $ vs ! (i + n)) p1
-    replaceProperty g (Point $ vs ! i) p2
+    replaceProperty g (vs ! (i + n)) p1
+    replaceProperty g (vs ! i) p2
 
   forM_ [0..n-1] $ \i -> do
     let ii = mod (i+1) n
@@ -307,8 +306,8 @@ makeRegularPrism g n center height radius isClosed = do
   when isClosed $ do
     top <- addVertex g
     bot <- addVertex g
-    replaceProperty g (Point top) (_y +~ height $ center)
-    replaceProperty g (Point bot) center
+    replaceProperty g top (_y +~ height $ center)
+    replaceProperty g bot center
 
     forM_ [0..n-1] $ \i -> do
       let ii = mod (i+1) n
@@ -323,7 +322,7 @@ makeRegularPrism g n center height radius isClosed = do
   If `center` is zero, then _xyz of the first point of the base is (V3 radius 0 0).
 -}
 makePyramid :: MutableFaceGraph m g v h e f
-            => PointGraph m g v (p a)
+            => Property m g v (p a)
             => (Ord v, Eq h, Eq f)
             => (Floating a, R3 p)
             => g
@@ -341,13 +340,13 @@ makePyramid g n center height radius isClosed = do
   apex <- addVertex g
   vs <- V.replicateM n (addVertex g)
 
-  replaceProperty g (Point apex) (center & _y +~ height)
+  replaceProperty g apex (center & _y +~ height)
 
   forM_ [0..n-1] $ \i -> do
     let i' = fromIntegral i
         p = center & _x +~ (radius * cos (i' * step))
                    & _z -~ (radius * sin (i' * step))
-    replaceProperty g (Point $ vs ! i) p
+    replaceProperty g (vs ! i) p
 
   forM_ [0..n-1] $ \i -> do
     let ii = mod (i+1) n
@@ -355,7 +354,7 @@ makePyramid g n center height radius isClosed = do
 
   when isClosed $ do
     bot <- addVertex g
-    replaceProperty g (Point bot) center
+    replaceProperty g bot center
 
     forM_ [0..n-1] $ \i -> do
       let ii = mod (i+1) n
@@ -366,7 +365,7 @@ makePyramid g n center height radius isClosed = do
 
 -- | Create an icosahedron, outward oriented, and adds it to the graph `g`.
 makeIcosahedron :: MutableFaceGraph m g v h e f
-                => PointGraph m g v (p a)
+                => Property m g v (p a)
                 => (Ord v, Eq h, Eq f)
                 => (Floating a, R3 p)
                 => g
@@ -397,7 +396,7 @@ makeIcosahedron g center radius = do
         , _xz +~ V2 (-tphi) (-t)
         ]
 
-  V.zipWithM_ (replaceProperty g . Point) vs ps
+  V.zipWithM_ (replaceProperty g) vs ps
 
   let faceI =
         [ (0, 2, 8)
@@ -431,7 +430,7 @@ makeIcosahedron g center radius = do
   along the height and adds it to the graph `g`.
 -}
 makeGrid :: MutableFaceGraph m g v h e f
-         => PointGraph m g v p
+         => Property m g v p
          => (Ord v, Eq h, Eq f)
          => g
          -> Int               -- ^ i (number of cells along the width)
@@ -444,7 +443,7 @@ makeGrid :: MutableFaceGraph m g v h e f
 
 makeGrid g i j coordF triangulated = do
   vs <- V.fromList <$> sequence
-    [ addVertex g >>= \v -> replaceProperty g (Point v) (coordF x y) >> return v
+    [ addVertex g >>= \v -> replaceProperty g v (coordF x y) >> return v
     | x <- [0..i], y <- [0..j]
     ]
   sequence

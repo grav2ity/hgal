@@ -115,20 +115,20 @@ borderVertex =
         isBorder f' (halfedge f' y) `shouldBe` False
 
 
-surfaceFixture :: Num a => SurfaceMesh (V3 a) ()
+surfaceFixture :: Num a => SurfaceMesh (V3 a) () () ()
 surfaceFixture = sm'
   where vs = [V3 0 0 0, V3 1 0 0, V3 0 1 0, V3 1 1 0, V3 2 0 0]
-        (sm, [u, v, w, x, y]) = mapAccumL newVertex (empty ()) vs
+        (sm, [u, v, w, x, y]) = mapAccumL newVertex (empty) vs
         (sm', _) = mapAccumL newFace sm [[u, w, v], [v, w, x], [v, x, y]]
 
-surfaceFixture2 :: Num a => SurfaceMesh (V3 a) ()
+surfaceFixture2 :: Num a => SurfaceMesh (V3 a) () () ()
 surfaceFixture2 = sm'
   where vs = [V3 0 2 0, V3 2 2 0, V3 0 0 0, V3 2 0 0, V3 1 1 0]
-        (sm, [u, v, w, x, y]) = mapAccumL newVertex (empty ()) vs
+        (sm, [u, v, w, x, y]) = mapAccumL newVertex (empty) vs
         (sm', _) = mapAccumL newFace sm [[x, v, y], [u, y, v], [u, w, y], [w, x, y]]
 
-surfaceFixture3 :: Num a => SurfaceMesh (V3 a) ()
+surfaceFixture3 :: Num a => SurfaceMesh (V3 a) () () ()
 surfaceFixture3 = sm'
   where vs = [V3 0 1 0, V3 0 0 0, V3 1 0 0, V3 1 1 0, V3 2 0 0, V3 2 1 0]
-        (sm, [u, v, w, x, y, z]) = mapAccumL newVertex (empty ()) vs
+        (sm, [u, v, w, x, y, z]) = mapAccumL newVertex (empty) vs
         (sm', _) = mapAccumL newFace sm [[u, v, w, x], [x, w, y, z]]
