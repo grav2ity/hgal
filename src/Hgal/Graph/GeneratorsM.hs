@@ -17,13 +17,13 @@ import qualified Hgal.Graph.EulerOperationsM as Euler
   Create an isolated triangle
   with its vertices initialized to `p0`, `p1` and `p2`, and adds it to the graph `g`.
 -}
-makeTriangle :: MutableFaceGraph m g v h e f
-             => Property m g v p
+makeTriangle :: MutableFaceGraph m g
+             => Property m g (V g) p
              => g
              -> p   -- ^ p0
              -> p   -- ^ p1
              -> p   -- ^ p2
-             -> m h -- ^ the non-border halfedge that has the target vertex
+             -> m (H g) -- ^ the non-border halfedge that has the target vertex
                     -- associated with `p0`
 makeTriangle g p0 p1 p2 = do
   v0 <- addVertex g
@@ -70,14 +70,14 @@ makeTriangle g p0 p1 p2 = do
   Create an isolated quad
   with its vertices initialized to `p0`, `p1`, `p2` and `p3`, and adds it to the graph `g`.
 -}
-makeQuad :: MutableFaceGraph m g v h e f
-         => Property m g v p
+makeQuad :: MutableFaceGraph m g
+         => Property m g (V g) p
          => g
          -> p   -- ^ p0
          -> p   -- ^ p1
          -> p   -- ^ p2
          -> p   -- ^ p3
-         -> m h -- ^ the non-border halfedge that has the target vertex associated with `p0`
+         -> m (H g) -- ^ the non-border halfedge that has the target vertex associated with `p0`
 makeQuad g p0 p1 p2 p3 = do
   v0 <- addVertex g
   v1 <- addVertex g
@@ -89,8 +89,8 @@ makeQuad g p0 p1 p2 p3 = do
   replaceProperty g v3 p3
   formQuad g v0 v1 v2 v3
 
-formQuad :: MutableFaceGraph m g v h e f
-         => g -> v -> v -> v -> v -> m h
+formQuad :: MutableFaceGraph m g
+         => g -> V g -> V g -> V g -> V g -> m (H g)
 formQuad g v0 v1 v2 v3 = do
   h0 <- halfedge =<< addEdge g
   h1 <- halfedge =<< addEdge g
@@ -138,14 +138,14 @@ formQuad g v0 v1 v2 v3 = do
   Create an isolated tetrahedron
   with its vertices initialized to `p0`, `p1`, `p2`, and `p3`, and adds it to the graph `g`.
 -}
-makeTetrahedron :: MutableFaceGraph m g v h e f
-                => Property m g v p
+makeTetrahedron :: MutableFaceGraph m g
+                => Property m g (V g) p
                 => g
                 -> p   -- ^ p0
                 -> p   -- ^ p1
                 -> p   -- ^ p2
                 -> p   -- ^ p3
-                -> m h -- ^ the halfedge that has the target vertex associated
+                -> m (H g) -- ^ the halfedge that has the target vertex associated
                        -- with `p0`, in the face with the vertices with the
                        -- points `p0`, `p1`, and `p2`
 makeTetrahedron g p0 p1 p2 p3 = do
@@ -226,9 +226,9 @@ makeTetrahedron g p0 p1 p2 p3 = do
   Create an isolated hexahedron with its vertices initialized to
   `p0`, `p1`, ... , and `p7`, and adds it to the graph `g`.
 -}
-makeHexahedron :: MutableFaceGraph m g v h e f
-               => Property m g v p
-               => Eq h
+makeHexahedron :: MutableFaceGraph m g
+               => Property m g (V g) p
+               => Eq (H g)
                => g
                -> p   -- ^ p0
                -> p   -- ^ p1
@@ -238,7 +238,7 @@ makeHexahedron :: MutableFaceGraph m g v h e f
                -> p
                -> p
                -> p   -- ^ p7
-               -> m h -- ^ the halfedge that has the target vertex associated
+               -> m (H g) -- ^ the halfedge that has the target vertex associated
                       -- with `p0`, in the face with the vertices with the
                       -- points `p0`, `p1`, `p2`, and `p3`
 makeHexahedron g p0 p1 p2 p3 p4 p5 p6 p7 = do
@@ -273,9 +273,9 @@ makeHexahedron g p0 p1 p2 p3 p4 p5 p6 p7 = do
 
   If `center` is zero, then _xyz of the first point of the prism is (V3 radius height 0).
 -}
-makeRegularPrism :: MutableFaceGraph m g v h e f
-                 => Property m g v (p a)
-                 => (Ord v, Eq h, Eq f)
+makeRegularPrism :: MutableFaceGraph m g
+                 => Property m g (V g) (p a)
+                 => (Ord (V g), Eq (H g), Eq (F g))
                  => (Floating a, R3 p)
                  => g
                  -> Int  -- ^ number of vertices per base >= 3
@@ -283,7 +283,7 @@ makeRegularPrism :: MutableFaceGraph m g v h e f
                  -> a    -- ^ height (distance between the two bases)
                  -> a    -- ^ radius (of the circles in which the bases are inscribed)
                  -> Bool -- ^ whether to create bases
-                 -> m h  -- ^ the halfedge that has the target vertex associated with the first point in the first face
+                 -> m (H g)  -- ^ the halfedge that has the target vertex associated with the first point in the first face
 makeRegularPrism g n center height radius isClosed = do
   let step = assert (n >= 3) $
              2 * pi / fromIntegral n
@@ -321,9 +321,9 @@ makeRegularPrism g n center height radius isClosed = do
 
   If `center` is zero, then _xyz of the first point of the base is (V3 radius 0 0).
 -}
-makePyramid :: MutableFaceGraph m g v h e f
-            => Property m g v (p a)
-            => (Ord v, Eq h, Eq f)
+makePyramid :: MutableFaceGraph m g
+            => Property m g (V g) (p a)
+            => (Ord (V g), Eq (H g), Eq (F g))
             => (Floating a, R3 p)
             => g
             -> Int   -- ^ the nummber of vertices in the base >= 3
@@ -331,7 +331,7 @@ makePyramid :: MutableFaceGraph m g v h e f
             -> a     -- ^ height (distance between the base and the apex)
             -> a     -- ^ radius (of the cirlce in which the base is inscribed)
             -> Bool  -- ^ whether to create the base
-            -> m h   -- ^ the halfedge that has the target vertex associated
+            -> m (H g)   -- ^ the halfedge that has the target vertex associated
                      -- with the apex point in the first face
 makePyramid g n center height radius isClosed = do
   let step = assert (n >= 3) $
@@ -364,14 +364,14 @@ makePyramid g n center height radius isClosed = do
 
 
 -- | Create an icosahedron, outward oriented, and adds it to the graph `g`.
-makeIcosahedron :: MutableFaceGraph m g v h e f
-                => Property m g v (p a)
-                => (Ord v, Eq h, Eq f)
+makeIcosahedron :: MutableFaceGraph m g
+                => Property m g (V g) (p a)
+                => (Ord (V g), Eq (H g), Eq (F g))
                 => (Floating a, R3 p)
                 => g
                 -> p a -- ^ center (of the sphere in which the icosahedron is inscribed)
                 -> a   -- ^ radius (of the sphere)
-                -> m h -- ^ the halfedge that has the target vertex associated
+                -> m (H g) -- ^ the halfedge that has the target vertex associated
                        -- with the first point in the first face
 makeIcosahedron g center radius = do
 
@@ -429,16 +429,16 @@ makeIcosahedron g center radius = do
   Creates a row major ordered grid with `i` cells along the width and `j` cells
   along the height and adds it to the graph `g`.
 -}
-makeGrid :: MutableFaceGraph m g v h e f
-         => Property m g v p
-         => (Ord v, Eq h, Eq f)
+makeGrid :: MutableFaceGraph m g
+         => Property m g (V g) p
+         => (Ord (V g), Eq (H g), Eq (F g))
          => g
          -> Int               -- ^ i (number of cells along the width)
          -> Int               -- ^ j (number of cells along the height)
          -> (Int -> Int -> p) -- ^ function that assign coordinates to the grid vertices
          -> Bool              -- ^ whether each cell is composed of one quad or two triangles
                               -- if true, the diagonal of each cell is oriented from (0,0) to (1,1)
-         -> m h               -- ^ the non-border non-diagonal halfedge that has
+         -> m (H g)               -- ^ the non-border non-diagonal halfedge that has
                               -- the target vertex associated with the first point of the grid
 
 makeGrid g i j coordF triangulated = do

@@ -22,9 +22,9 @@ import Hgal.Graph.LoopsM
 
 
 addFace :: Foldable t
-        => MutableFaceGraph m g v h e f
-        => (Ord v, Eq h, Eq f)
-        => g -> t v -> m f
+        => MutableFaceGraph m g
+        => (Ord (V g), Eq (H g), Eq (F g))
+        => g -> t (V g) -> m (F g)
 addFace g vs = do
   let
     n = length vs
@@ -149,9 +149,9 @@ addFace g vs = do
         forM_ vertices (adjustIncomingHalfedge g)
         return f
 
-removeFace :: MutableFaceGraph m g v h e f
-           => Eq h
-           => g -> h -> m ()
+removeFace :: MutableFaceGraph m g
+           => Eq (H g)
+           => g -> H g -> m ()
 removeFace g h = do
   isB <- isBorder h
   f <- assert (not isB) (face h)
@@ -182,25 +182,25 @@ removeFace g h = do
   isB' <- isBorder =<< opposite h
   when isB' (remove =<< edge h)
 
-addEdge :: MutableHalfedgeGraph m g v h e
-        => g -> v -> v -> m e
+addEdge :: MutableHalfedgeGraph m g
+        => g -> V g -> V g -> m (E g)
 addEdge g s t = do
   e <- Graph.addEdge g
   (setTarget ?? t) =<< halfedge e
   (setTarget ?? s) =<< (opposite <=< halfedge) e
   return e
 
-splitEdge :: MutableFaceGraph m g v h e f
-          => Eq h
-          => g -> h -> m h
+splitEdge :: MutableFaceGraph m g
+          => Eq (H g)
+          => g -> H g -> m (H g)
 splitEdge g h = do
   p <- prev h
   opposite =<< splitVertex g p =<< opposite h
 
 
-joinLoop :: MutableFaceGraph m g v h e f
-         => (Eq h, Eq f)
-         => g -> h -> h -> m h
+joinLoop :: MutableFaceGraph m g
+         => (Eq (H g), Eq (F g))
+         => g -> H g -> H g -> m (H g)
 joinLoop g h1 h2 = do
   isB1 <- isBorder h1
   isB2 <- isBorder h1
@@ -244,9 +244,9 @@ joinLoop g h1 h2 = do
   worker3 h2
   return h1
 
-splitLoop :: MutableFaceGraph m g v h e f
-          => (Eq v, Eq h)
-          => g -> h -> h -> h -> m h
+splitLoop :: MutableFaceGraph m g
+          => (Eq (V g), Eq (H g))
+          => g -> H g -> H g -> H g -> m (H g)
 splitLoop g h i j = do
   th <- target h
   ti <- target i
@@ -336,9 +336,9 @@ splitLoop g h i j = do
 
   opposite hnew
 
-splitVertex :: MutableFaceGraph m g v h e f
-            => Eq h
-            => g -> h -> h -> m h
+splitVertex :: MutableFaceGraph m g
+            => Eq (H g)
+            => g -> H g -> H g -> m (H g)
 splitVertex g h1 h2 = do
   -- add missing assert here
 
@@ -362,9 +362,9 @@ splitVertex g h1 h2 = do
   setVertexHalfedge hnewopp'
   return hnew
 
-joinVertex :: MutableFaceGraph m g v h e f
-           => (Eq v, Eq h)
-           => g -> h -> m h
+joinVertex :: MutableFaceGraph m g
+           => (Eq (V g), Eq (H g))
+           => g -> H g -> m (H g)
 joinVertex g h = do
   hop <- opposite h
   hprev <- prev hop
@@ -399,9 +399,9 @@ joinVertex g h = do
 
   return hprev
 
-makeHole :: MutableFaceGraph m g v h e f
-         => Eq h
-         => g -> h -> m ()
+makeHole :: MutableFaceGraph m g
+         => Eq (H g)
+         => g -> H g -> m ()
 makeHole g h = do
   isB <- isBorder h
   fd <- assert (not isB) (face h)
@@ -411,17 +411,17 @@ makeHole g h = do
                        ) h
   remove fd
 
-fillHole :: MutableFaceGraph m g v h e f
-         => Eq h
-         => g -> h -> m ()
+fillHole :: MutableFaceGraph m g
+         => Eq (H g)
+         => g -> H g -> m ()
 fillHole g h = do
   f <- Graph.addFace g
   halfedgeAroundFace g (\_ h' -> setFace h' f) h
   setHalfedge f h
 
-addCenterVertex :: MutableFaceGraph m g v h e f
-                => Eq h
-                => g -> h -> m h
+addCenterVertex :: MutableFaceGraph m g
+                => Eq (H g)
+                => g -> H g -> m (H g)
 addCenterVertex g h = do
   hnew <- halfedge =<< Graph.addEdge g
   vnew <- addVertex g
@@ -452,9 +452,9 @@ addCenterVertex g h = do
   setVertexHalfedge hnew
   return hnew
 
-removeCenterVertex :: MutableFaceGraph m g v h e f
-                   => Eq h
-                   => g -> h -> m h
+removeCenterVertex :: MutableFaceGraph m g
+                   => Eq (H g)
+                   => g -> H g -> m (H g)
 removeCenterVertex g h = do
   h2 <- (opposite <=< next) h
   hret <- prev h
@@ -479,9 +479,9 @@ removeCenterVertex g h = do
 
   return hret
 
-addVertexAndFaceToBorder :: MutableFaceGraph m g v h e f
-                         => Eq h
-                         => g -> h -> h -> m h
+addVertexAndFaceToBorder :: MutableFaceGraph m g
+                         => Eq (H g)
+                         => g -> H g -> H g -> m (H g)
 addVertexAndFaceToBorder g h1 h2 = do
   v <- addVertex g
   f <- Graph.addFace g
@@ -511,9 +511,9 @@ addVertexAndFaceToBorder g h1 h2 = do
   setHalfedge f ohe1
   return ohe2
 
-addFaceToBorder :: MutableFaceGraph m g v h e f
-                => Eq h
-                => g -> h -> h -> m h
+addFaceToBorder :: MutableFaceGraph m g
+                => Eq (H g)
+                => g -> H g -> H g -> m (H g)
 addFaceToBorder g h1 h2 = do
   isB1 <- isBorder h1
   isB2 <- isBorder h2
@@ -538,9 +538,9 @@ addFaceToBorder g h1 h2 = do
   setHalfedge f newh
   return newh
 
-joinFace :: MutableFaceGraph m g v h e f
-         => Eq h
-         => g -> h -> m h
+joinFace :: MutableFaceGraph m g
+         => Eq (H g)
+         => g -> H g -> m (H g)
 joinFace g h = do
   hop <- opposite h
   hprev <- prev h
@@ -568,9 +568,9 @@ joinFace g h = do
   remove =<< edge h
   return hprev
 
-splitFace :: MutableFaceGraph m g v h e f
-          => Eq h
-          => g -> h -> h -> m h
+splitFace :: MutableFaceGraph m g
+          => Eq (H g)
+          => g -> H g -> H g -> m (H g)
 splitFace g h1 h2 = do
   hnew <- halfedge =<< Graph.addEdge g
   fnew <- Graph.addFace g

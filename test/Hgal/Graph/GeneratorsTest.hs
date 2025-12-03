@@ -20,12 +20,12 @@ import qualified Hgal.Data.SurfaceMesh as SurfaceMesh
 test_Generators :: IO TestTree
 test_Generators = do
   specs <- concat <$> mapM testSpecs
-           [ testGenerators @Double @(SurfaceMesh (V3 Double) () () ()) (SurfaceMesh.empty)
+           [ testGenerators @Double @(SurfaceMesh (V3 Double) () () ()) SurfaceMesh.empty
            ]
   return $ testGroup "Generators" [testGroup "Surface Mesh" specs]
 
-testGenerators :: forall a g v h e f p. SurfaceFixtureC a g v h e f p
-               => Ord v
+testGenerators :: SurfaceFixtureC a g
+               => Ord (V g)
                => Floating a
                => g -> Spec
 testGenerators g = do

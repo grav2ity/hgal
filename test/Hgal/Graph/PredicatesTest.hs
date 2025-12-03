@@ -21,13 +21,13 @@ test_Predicates :: IO TestTree
 test_Predicates = do
   specs <- concat <$> mapM testSpecs
            [ testSimple @Double @(SurfaceMesh (V3 Double) () () ())
-           , testValidity @Double @(SurfaceMesh (V3 Double) () () ()) (SurfaceMesh.empty)
-           , testValidity2 @Double @(SurfaceMesh (V3 Double) () () ()) (SurfaceMesh.empty)
+           , testValidity @Double @(SurfaceMesh (V3 Double) () () ()) SurfaceMesh.empty
+           , testValidity2 @Double @(SurfaceMesh (V3 Double) () () ()) SurfaceMesh.empty
            ]
   return $ testGroup "Predicates" [testGroup "Static fixture tests" specs]
 
 
-isWhatItIs :: forall a g v h e f p. SurfaceFixtureC a g v h e f p
+isWhatItIs :: SurfaceFixtureC a g
            => g -> String -> Bool -> Bool -> Bool -> Bool -> Spec
 isWhatItIs g name triangle quad tetrahedron hexahedron = do
   let h = head $ halfedges g
@@ -37,7 +37,7 @@ isWhatItIs g name triangle quad tetrahedron hexahedron = do
     isTetrahedron g h `shouldBe` tetrahedron
     isHexahedron g h `shouldBe` hexahedron
 
-testSimple :: forall a g v h e f p. SurfaceFixtureC a g v h e f p => Spec
+testSimple :: forall a g. SurfaceFixtureC a g => Spec
 testSimple = do
   triangle <- runIO $ fromOFF @g "test/Hgal/Meshes/triangle.off"
   quad <- runIO $ fromOFF @g "test/Hgal/Meshes/quad.off"
@@ -50,7 +50,7 @@ testSimple = do
   isWhatItIs cube "cube" False False False False
   isWhatItIs cubeQuads "hexahedron" False False False True
 
-testValidity :: forall a g v h e f p. SurfaceFixtureC a g v h e f p
+testValidity :: SurfaceFixtureC a g
              => g -> Spec
 testValidity g = do
   describe "validity functions test 1" $ do
@@ -93,7 +93,7 @@ testValidity g = do
       either id show (isValidFaceGraph g5) `shouldBe` "True"
       either id show (isValidPolygonMesh g5) `shouldBe` "True"
 
-testValidity2 :: forall a g v h e f p. SurfaceFixtureC a g v h e f p
+testValidity2 :: SurfaceFixtureC a g
              => g -> Spec
 testValidity2 g = do
   describe "validity functions test 2" $ do

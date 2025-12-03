@@ -6,6 +6,21 @@ import Data.Maybe
 import Data.Proxy
 import qualified Data.Vector as V
 
+import Hgal.Data.Property
+import Hgal.Graph.Class
+
+class PropertyGraph m g where
+  getVertexProperty :: g -> V g -> m (Maybe (Vp g))
+
+  -- getVertexProperty' :: (Functor m, Default p) => g -> V g -> m p
+  -- getVertexProperty' s k = fromMaybe def <$> getVertexProperty s k
+
+  adjustVertexProperty :: g -> (Vp g -> Vp g) -> V g -> m ()
+  replaceVertexProperty :: g -> V g -> Vp g -> m ()
+  replaceVertexProperty s k v = adjustVertexProperty s (const v) k
+
+  -- vertexProperty :: V g -> Lens' g (Maybe (Vp g))
+
 -- class Property m s k p | s k -> p, s p -> k where
 class Property m s k p | s k -> p where
   getProperty :: s -> k -> m (Maybe p)

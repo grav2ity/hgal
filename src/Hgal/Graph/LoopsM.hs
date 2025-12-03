@@ -8,115 +8,115 @@ import qualified Data.Vector.Circular as CV
 import Hgal.Graph.ClassM
 
 
-nextAroundTarget :: HalfedgeGraph m g v h e
-                 => h -> m h
+nextAroundTarget :: HalfedgeGraph m g
+                 => H g -> m (H g)
 nextAroundTarget = opposite <=< next
 
-prevAroundTarget :: HalfedgeGraph m g v h e
-                 => h -> m h
+prevAroundTarget :: HalfedgeGraph m g
+                 => H g -> m (H g)
 prevAroundTarget = prev <=< opposite
 
-nextAroundSource :: HalfedgeGraph m g v h e
-                 => h -> m h
+nextAroundSource :: HalfedgeGraph m g
+                 => H g -> m (H g)
 nextAroundSource = next <=< opposite
 
-prevAroundSource :: HalfedgeGraph m g v h e
-                 => h -> m h
+prevAroundSource :: HalfedgeGraph m g
+                 => H g -> m (H g)
 prevAroundSource = opposite <=< prev
 
 -- -------------------------------------------------------------------------------
 -- -- perform action on each element
 
-halfedgeAroundTarget :: HalfedgeGraph m g v h e
-                     => Eq h
-                     => g -> (g -> h -> m ()) -> h -> m ()
+halfedgeAroundTarget :: HalfedgeGraph m g
+                     => Eq (H g)
+                     => g -> (g -> H g -> m ()) -> H g -> m ()
 halfedgeAroundTarget = loop nextAroundTarget
 
-halfedgeAroundSource :: HalfedgeGraph m g v h e
-                     => Eq h
-                     => g -> (g -> h -> m ()) -> h -> m ()
+halfedgeAroundSource :: HalfedgeGraph m g
+                     => Eq (H g)
+                     => g -> (g -> H g -> m ()) -> H g -> m ()
 halfedgeAroundSource = loop nextAroundSource
 
-halfedgeAroundFace :: HalfedgeGraph m g v h e
-                   => Eq h
-                   => g -> (g -> h -> m ()) -> h -> m ()
+halfedgeAroundFace :: HalfedgeGraph m g
+                   => Eq (H g)
+                   => g -> (g -> H g -> m ()) -> H g -> m ()
 halfedgeAroundFace = loop next
 
-faceAroundTarget :: FaceGraph m g v h e f
-                 => Eq h
-                 => g -> (g -> f -> m ()) -> h -> m ()
+faceAroundTarget :: FaceGraph m g
+                 => Eq (H g)
+                 => g -> (g -> F g -> m ()) -> H g -> m ()
 faceAroundTarget g f = halfedgeAroundTarget g (\g' hx -> f g' =<< face hx)
 
-faceAroundFace :: FaceGraph m g v h e f
-               => Eq h
-               => g -> (g -> f -> m ()) -> h -> m ()
+faceAroundFace :: FaceGraph m g
+               => Eq (H g)
+               => g -> (g -> F g -> m ()) -> H g -> m ()
 faceAroundFace g f = halfedgeAroundFace g (\g' hx -> f g' =<< (face <=< opposite) hx)
 
-vertexAroundTarget :: HalfedgeGraph m g v h e
-                   => Eq h
-                   => g -> (g -> v -> m ()) -> h -> m ()
+vertexAroundTarget :: HalfedgeGraph m g
+                   => Eq (H g)
+                   => g -> (g -> V g -> m ()) -> H g -> m ()
 vertexAroundTarget g f =
   halfedgeAroundTarget g (\g' hx -> f g' =<< source hx)
 
-vertexAroundFace :: FaceGraph m g v h e f
-                 => Eq h
-                 => g -> (g -> v -> m ()) -> h -> m ()
+vertexAroundFace :: FaceGraph m g
+                 => Eq (H g)
+                 => g -> (g -> V g -> m ()) -> H g -> m ()
 vertexAroundFace g f =
   halfedgeAroundFace g (\g' hx -> f g' =<< target hx)
 
-edgeAroundFace :: HalfedgeGraph m g v h e
-               => Eq h
-               => g -> (g -> e -> m ()) -> h -> m ()
+edgeAroundFace :: HalfedgeGraph m g
+               => Eq (H g)
+               => g -> (g -> E g -> m ()) -> H g -> m ()
 edgeAroundFace g f =
   halfedgeAroundFace g (\g' hx -> f g' =<< edge hx)
 
 -- -------------------------------------------------------------------------------
 -- -- gets circular vector of all elements
 
-halfedgesAroundTarget :: HalfedgeGraph m g v h e
-                      => Eq h
-                      => h -> m (CircularVector h)
+halfedgesAroundTarget :: HalfedgeGraph m g
+                      => Eq (H g)
+                      => H g -> m (CircularVector (H g))
 halfedgesAroundTarget h =
   CV.unfoldr1M (loopC nextAroundTarget return h) h h
 
-halfedgesAroundSource :: HalfedgeGraph m g v h e
-                      => Eq h
-                      => h -> m (CircularVector h)
+halfedgesAroundSource :: HalfedgeGraph m g
+                      => Eq (H g)
+                      => H g -> m (CircularVector (H g))
 halfedgesAroundSource h =
   CV.unfoldr1M (loopC nextAroundSource return h) h h
 
-halfedgesAroundFace :: HalfedgeGraph m g v h e
-                    => Eq h
-                    => h -> m (CircularVector h)
+halfedgesAroundFace :: HalfedgeGraph m g
+                    => Eq (H g)
+                    => H g -> m (CircularVector (H g))
 halfedgesAroundFace h = CV.unfoldr1M (loopC next return h) h h
 
-facesAroundTarget :: FaceGraph m g v h e f
-                  => Eq h
-                  => h -> m (CircularVector f)
+facesAroundTarget :: FaceGraph m g
+                  => Eq (H g)
+                  => H g -> m (CircularVector (F g))
 facesAroundTarget h =
   (CV.unfoldr1M (loopC nextAroundTarget face h) ?? h) =<< face h
 
-facesAroundFace :: FaceGraph m g v h e f
-                => Eq h
-                => h -> m (CircularVector f)
+facesAroundFace :: FaceGraph m g
+                => Eq (H g)
+                => H g -> m (CircularVector (F g))
 facesAroundFace h =
   (CV.unfoldr1M (loopC next face h) ?? h) =<< face h
 
-verticesAroundTarget :: HalfedgeGraph m g v h e
-                     => Eq h
-                     => h -> m (CircularVector v)
+verticesAroundTarget :: HalfedgeGraph m g
+                     => Eq (H g)
+                     => H g -> m (CircularVector (V g))
 verticesAroundTarget h =
   (CV.unfoldr1M (loopC nextAroundTarget source h) ?? h) =<< source h
 
-verticesAroundFace :: HalfedgeGraph m g v h e
-                   => Eq h
-                   => h -> m (CircularVector v)
+verticesAroundFace :: HalfedgeGraph m g
+                   => Eq (H g)
+                   => H g -> m (CircularVector (V g))
 verticesAroundFace h =
   (CV.unfoldr1M (loopC next target h) ?? h) =<< target h
 
-edgesAroundFace :: HalfedgeGraph m g v h e
-                => Eq h
-                => h -> m (CircularVector e)
+edgesAroundFace :: HalfedgeGraph m g
+                => Eq (H g)
+                => H g -> m (CircularVector (E g))
 edgesAroundFace h =
   (CV.unfoldr1M (loopC next edge h) ?? h) =<< edge h
 
@@ -124,11 +124,11 @@ edgesAroundFace h =
 -- -- internal helpers
 
 loop :: Monad m
-     => Eq h
-     => (h -> m h)
+     => Eq (H g)
+     => (H g -> m (H g))
      -> g
-     -> (g -> h -> m ())
-     -> h
+     -> (g -> H g -> m ())
+     -> H g
      -> m ()
 loop m g f h = worker h
   where
@@ -137,13 +137,25 @@ loop m g f h = worker h
       n <- m hx
       when (n /= h) (worker n)
 
+-- loopC :: Monad m
+--       => Eq (H g)
+--       => (H g -> m (H g))
+--       -> (H g -> m a)
+--       -> H g
+--       -> H g
+--       -> m (Maybe (a, H g))
+-- loopC m f h hx = do
+--   n <- m hx
+--   a <- f n
+--   if n /= h then return (Just (a, n)) else return Nothing
+
 loopC :: Monad m
-      => Eq h
-      => (h -> m h)
-      -> (h -> m a)
-      -> h
-      -> h
-      -> m (Maybe (a, h))
+      => Eq a
+      => (a -> m a)
+      -> (a -> m b)
+      -> a
+      -> a
+      -> m (Maybe (b, a))
 loopC m f h hx = do
   n <- m hx
   a <- f n

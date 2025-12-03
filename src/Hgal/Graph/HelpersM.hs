@@ -6,12 +6,12 @@ import Control.Lens ((??))
 import Hgal.Graph.ClassM
 
 
-setBorder :: MutableFaceGraph m g v h e f
-          => g -> h -> m ()
+setBorder :: MutableFaceGraph m g
+          => g -> H g -> m ()
 setBorder g h = setFace h =<< nullFace g
 
-copy :: MutableFaceGraph m g v h e f
-     => g -> h -> m h
+copy :: MutableFaceGraph m g
+     => g -> H g -> m (H g)
 copy g h = do
   e <- addEdge g
   res <- halfedge e
@@ -24,33 +24,33 @@ copy g h = do
   -- note that we cannot call set_next as it then would call set_prev on the  original
   return res
 
-setVertexHalfedge :: MutableHalfedgeGraph m g v h e
-                  => h -> m ()
+setVertexHalfedge :: MutableHalfedgeGraph m g
+                  => H g -> m ()
 setVertexHalfedge h = do
   (setHalfedge ?? h) =<< target h
 
-closeTip :: MutableHalfedgeGraph m g v h e
-         => h -> v -> m ()
+closeTip :: MutableHalfedgeGraph m g
+         => H g -> V g -> m ()
 closeTip h v = do
   setNext h =<< opposite h
   setTarget h v
   setHalfedge v h
 
-insertTip :: MutableHalfedgeGraph m g v h e
-          => h -> h -> m ()
+insertTip :: MutableHalfedgeGraph m g
+          => H g -> H g -> m ()
 insertTip h h2 = do
   setNext h =<< next h2
   setNext h2 =<< opposite h
   setTarget h =<< target h2
 
-removeTip :: MutableHalfedgeGraph m g v h e
-          => h -> m ()
+removeTip :: MutableHalfedgeGraph m g
+          => H g -> m ()
 removeTip h = do
   setNext h =<< (next <=< opposite <=< next) h
 
-setFaceInFaceLoop :: MutableFaceGraph m g v h e f
-                  => Eq h
-                  => h -> f -> m ()
+setFaceInFaceLoop :: MutableFaceGraph m g
+                  => Eq (H g)
+                  => H g -> F g -> m ()
 setFaceInFaceLoop h f = worker h
   where
     worker hx = do
@@ -58,38 +58,38 @@ setFaceInFaceLoop h f = worker h
       n <- next hx
       when (n /= h) (worker n)
 
-insertHalfedge :: MutableFaceGraph m g v h e f
-               => h -> h -> m ()
+insertHalfedge :: MutableFaceGraph m g
+               => H g -> H g -> m ()
 insertHalfedge h f = do
   setNext h =<< next f
   setNext f h
   setFace h =<< face f
 
-exactNumVertices :: HalfedgeGraph m g v h e
+exactNumVertices :: HalfedgeGraph m g
                  => g -> m Int
 exactNumVertices = return . length <=< vertices
 
-exactNumHalfedges :: HalfedgeGraph m g v h e
+exactNumHalfedges :: HalfedgeGraph m g
                   => g -> m Int
 exactNumHalfedges = return . length <=< halfedges
 
-exactNumEdges :: HalfedgeGraph m g v h e
+exactNumEdges :: HalfedgeGraph m g
               => g -> m Int
 exactNumEdges = return . length <=< edges
 
-exactNumFaces :: FaceGraph m g v h e f
+exactNumFaces :: FaceGraph m g
               => g -> m Int
 exactNumFaces = return . length <=< faces
 
-isIsolated :: HalfedgeGraph m g v h e
-           => Eq h
-           => g -> v -> m Bool
+isIsolated :: HalfedgeGraph m g
+           => Eq (H g)
+           => g -> V g -> m Bool
 isIsolated g v = liftM2 (==) (halfedge v) (nullHalfedge g)
 
-adjustIncomingHalfedge :: MutableHalfedgeGraph m g v h e
-                       => FaceGraph m g v h e f
-                       => (Eq v, Eq h, Eq f)
-                       => g -> v -> m ()
+adjustIncomingHalfedge :: MutableHalfedgeGraph m g
+                       => FaceGraph m g
+                       => (Eq (V g), Eq (H g), Eq (F g))
+                       => g -> V g -> m ()
 adjustIncomingHalfedge g v = do
   h <- halfedge v
   nullH <- nullHalfedge g

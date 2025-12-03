@@ -11,33 +11,33 @@ import qualified Hgal.Graph.ClassM as M
 import Hgal.Graph.Loops
 
 
-isTriangle :: HalfedgeGraph g v h e => Eq h => g -> h -> Bool
+isTriangle :: HalfedgeGraph g => Eq (H g) => g -> H g -> Bool
 isTriangle g h = h == next3 g h
 
-isIsolatedTriangle :: HalfedgeGraph g v h e
-                   => M.HalfedgeGraph (State g) g v h e
-                   => Eq h
-                   => g -> h -> Bool
+isIsolatedTriangle :: HalfedgeGraph g
+                   => M.HalfedgeGraph (State g) g
+                   => Eq (H g)
+                   => g -> H g -> Bool
 isIsolatedTriangle g h =
   isTriangle g h && allOf traversed (isBorder g . opposite g) (halfedgesAroundFace g h)
 
-isTriangleMesh :: FaceGraph g v h e f => Eq h => g -> Bool
+isTriangleMesh :: FaceGraph g => Eq (H g) => g -> Bool
 isTriangleMesh g = allOf traversed (isTriangle g . halfedge g) (faces g)
 
-isQuad :: HalfedgeGraph g v h e => Eq h => g -> h -> Bool
+isQuad :: HalfedgeGraph g => Eq (H g) => g -> H g -> Bool
 isQuad g h = h == (next g . next3 g $ h)
 
-isIsolatedQuad :: HalfedgeGraph g v h e
-               => M.HalfedgeGraph (State g) g v h e
-               => Eq h
-               => g -> h -> Bool
+isIsolatedQuad :: HalfedgeGraph g
+               => M.HalfedgeGraph (State g) g
+               => Eq (H g)
+               => g -> H g -> Bool
 isIsolatedQuad g h =
   isQuad g h && allOf traversed (isBorder g . opposite g) (halfedgesAroundFace g h)
 
-isQuadMesh :: FaceGraph g v h e f => Eq h => g -> Bool
+isQuadMesh :: FaceGraph g => Eq (H g) => g -> Bool
 isQuadMesh g = allOf traversed (isQuad g . halfedge g) (faces g)
 
-isTetrahedron :: HalfedgeGraph g v h e => Eq h => g -> h -> Bool
+isTetrahedron :: HalfedgeGraph g => Eq (H g) => g -> H g -> Bool
 isTetrahedron g h1 =
   let h2 = next g h1
       h3 = next g h2
@@ -57,7 +57,7 @@ isTetrahedron g h1 =
         || any not (isTriangle g <$> [h1, h4, h5, h6])
         || or (isBorder g <$> [h1, h4, h5, h6])
 
-isHexahedron :: HalfedgeGraph g v h e => Eq h => g -> h -> Bool
+isHexahedron :: HalfedgeGraph g => Eq (H g) => g -> H g -> Bool
 isHexahedron g h1 =
   let h2 = next g h1
       h3 = next g h2
@@ -82,9 +82,9 @@ isHexahedron g h1 =
         || next g h1o' /= h4o'
         || not (isQuad g h4o')
 
-isValidHalfedgeGraph :: HalfedgeGraph g v h e
-                     => M.HalfedgeGraph (State g) g v h e
-                     => (Eq v, Eq h, Show v, Show h)
+isValidHalfedgeGraph :: HalfedgeGraph g
+                     => M.HalfedgeGraph (State g) g
+                     => (Eq (V g), Eq (H g), Show (V g), Show (H g))
                      => g -> Either String Bool
 isValidHalfedgeGraph g =
    first (<> "Halfedge Graph Structure is NOT VALID.\n") $
@@ -107,9 +107,9 @@ isValidHalfedgeGraph g =
           | (next g h == h) || (target g h == target g (opposite g h)) = Left "Pointer validity corrupted.\n"
           | otherwise = Right True
 
-isValidFaceGraph :: FaceGraph g v h e f
-                 => M.FaceGraph (State g) g v h e f
-                 => (Eq v, Eq h, Eq f, Show v, Show h, Show f)
+isValidFaceGraph :: FaceGraph g
+                 => M.FaceGraph (State g) g
+                 => (Eq (V g), Eq (H g), Eq (F g), Show (V g), Show (H g), Show (F g))
                  => g -> Either String Bool
 isValidFaceGraph g = firstError [isValidHalfedgeGraph g, fCheck]
   where
@@ -128,9 +128,9 @@ isValidFaceGraph g = firstError [isValidHalfedgeGraph g, fCheck]
           | face g h /= face g (next g h) = Left $ "Halfedge " ++ show h ++ " and its next have a differet face.\n"
           | otherwise = Right True
 
-isValidPolygonMesh :: FaceGraph g v h e f
-                   => M.FaceGraph (State g) g v h e f
-                   => (Eq v, Eq h, Eq f, Show v, Show h, Show f)
+isValidPolygonMesh :: FaceGraph g
+                   => M.FaceGraph (State g) g
+                   => (Eq (V g), Eq (H g), Eq (F g), Show (V g), Show (H g), Show (F g))
                    => g -> Either String Bool
 isValidPolygonMesh g = firstError [isValidFaceGraph g, geometryI]
   where
@@ -144,17 +144,17 @@ isValidPolygonMesh g = firstError [isValidFaceGraph g, geometryI]
       where nexth = next g h
 
 
-vertexIntegrity :: HalfedgeGraph g v h e
-                => (Eq v, Show v)
-                => g -> v -> Either String Bool
+vertexIntegrity :: HalfedgeGraph g
+                => (Eq (V g), Show (V g))
+                => g -> V g -> Either String Bool
 vertexIntegrity g v
   | fromRight False (isValid g h) && target g (halfedge g v) == v = Right True
   | otherwise = Left $ "Halfedge of vertex " ++ show v ++ " is not an incoming halfedge.\n"
   where h = halfedge g v
 
-halfedgeIntegrity :: HalfedgeGraph g v h e
-                  => (Eq v, Eq h, Show h)
-                  => g -> h -> Either String Bool
+halfedgeIntegrity :: HalfedgeGraph g
+                  => (Eq (V g), Eq (H g), Show (H g))
+                  => g -> H g -> Either String Bool
 halfedgeIntegrity g h = firstError [halfedgeI, edgeI, oppositeI, previousI, nextI, vertexI, nextOppositeI]
   where
     halfedgeI =
@@ -179,9 +179,9 @@ halfedgeIntegrity g h = firstError [halfedgeI, edgeI, oppositeI, previousI, next
       | target g (opposite g (next g h)) == target g h = Right True
       | otherwise = Left $ "Halfedge vertex of next opposite is not the same for " ++ show h ++ ".\n"
 
-faceIntegrity :: FaceGraph g v h e f
-              => (Eq f, Show f)
-              => g -> f -> Either String Bool
+faceIntegrity :: FaceGraph g
+              => (Eq (F g), Show (F g))
+              => g -> F g -> Either String Bool
 faceIntegrity g f = faceI
   where
     faceI

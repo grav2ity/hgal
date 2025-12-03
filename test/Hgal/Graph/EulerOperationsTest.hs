@@ -44,29 +44,29 @@ test_eulerOpertations = do
   return $ testGroup "EulerOperations" [testGroup "SurfaceMesh static test" specs]
 
 
-testFaceFixture :: forall g v h e f. FaceGraph g v h e f
-                => M.FaceGraph (State g) g v h e f
-                => (Eq v, Eq h, Eq f, Show v, Show h, Show f)
-                => FaceFixture g v h e f -> Spec
+testFaceFixture :: FaceGraph g
+                => M.FaceGraph (State g) g
+                => (Eq (V g), Eq (H g), Eq (F g), Show (V g), Show (H g), Show (F g))
+                => FaceFixture g -> Spec
 testFaceFixture f = do
   let g = faceFixture f
   it "valid fixture" $ do
-    either id show (isValidPolygonMesh @g @v @h @e @f g) `shouldBe` "True"
+    either id show (isValidPolygonMesh g) `shouldBe` "True"
     notElem (nullVertex g) (($ f) <$> [u, v, w, x, y, z]) `shouldBe` True
 
-testHalfedgeFixture :: forall g v h e f. FaceGraph g v h e f
-                => M.FaceGraph (State g) g v h e f
-                => (Eq v, Eq h, Eq f, Show v, Show h, Show f)
-                => HalfedgeFixture g v h e f -> Spec
+testHalfedgeFixture :: FaceGraph g
+                    => M.FaceGraph (State g) g
+                    => (Eq (V g), Eq (H g), Eq (F g), Show (V g), Show (H g), Show (F g))
+                    => HalfedgeFixture g -> Spec
 testHalfedgeFixture f = do
   let g = halfedgeFixture f
   it "valid fixture" $ do
-    either id show (isValidPolygonMesh @g @v @h @e @f g) `shouldBe` "True"
+    either id show (isValidPolygonMesh g) `shouldBe` "True"
     notElem (nullHalfedge g) (($ f) <$> [h1, h2, h3]) `shouldBe` True
 
-joinFaceTest :: forall a g v h e f p. SurfaceFixtureC a g v h e f p => Spec
+joinFaceTest :: forall a g. SurfaceFixtureC a g => Spec
 joinFaceTest = do
-  f <- runIO (surfaceFixture1 @a @g @v @h @e @f @p)
+  f <- runIO (surfaceFixture1 @a @g)
   describe "joinFace" $ do
       testFaceFixture f
       let g = faceFixture f
@@ -91,9 +91,9 @@ joinFaceTest = do
         either id show (isValidPolygonMesh g') `shouldBe` "True"
 
 
-removeFaceTest1 :: forall a g v h e f p. SurfaceFixtureC a g v h e f p => Spec
+removeFaceTest1 :: forall a g. SurfaceFixtureC a g => Spec
 removeFaceTest1 = do
-  f <- runIO (surfaceFixture1 @a @g @v @h @e @f @p)
+  f <- runIO (surfaceFixture1 @a @g)
   describe "removeFaceTest1" $ do
     testFaceFixture f
     let g = faceFixture f
@@ -113,9 +113,9 @@ removeFaceTest1 = do
     it "valid poylygon mesh" $ do
       either id show (isValidPolygonMesh g') `shouldBe` "True"
 
-removeFaceTest2 :: forall a g v h e f p. SurfaceFixtureC a g v h e f p => Spec
+removeFaceTest2 :: forall a g. SurfaceFixtureC a g => Spec
 removeFaceTest2 = do
-  f <- runIO (surfaceFixture2 @a @g @v @h @e @f @p)
+  f <- runIO (surfaceFixture2 @a @g)
   describe "removeFaceTest2" $ do
     testFaceFixture f
     let g = faceFixture f
@@ -135,9 +135,9 @@ removeFaceTest2 = do
     it "valid poylygon mesh" $ do
       either id show (isValidPolygonMesh g') `shouldBe` "True"
 
-addFaceToBorderTest :: forall a g v h e f p. SurfaceFixtureC a g v h e f p => Spec
+addFaceToBorderTest :: forall a g. SurfaceFixtureC a g => Spec
 addFaceToBorderTest = do
-  f <- runIO (surfaceFixture5 @a @g @v @h @e @f @p)
+  f <- runIO (surfaceFixture5 @a @g)
   describe "addFaceToBorderTest" $ do
     testHalfedgeFixture f
     let g = halfedgeFixture f
@@ -145,9 +145,9 @@ addFaceToBorderTest = do
     it "valid poylygon mesh" $ do
       either id show (isValidPolygonMesh g') `shouldBe` "True"
 
-addVertexAndFaceToBorderTest :: forall a g v h e f p. SurfaceFixtureC a g v h e f p => Spec
+addVertexAndFaceToBorderTest :: forall a g. SurfaceFixtureC a g => Spec
 addVertexAndFaceToBorderTest = do
-  f <- runIO (surfaceFixture5 @a @g @v @h @e @f @p)
+  f <- runIO (surfaceFixture5 @a @g)
   describe "addVertexAndFaceToBordetTest" $ do
     testHalfedgeFixture f
     let g = halfedgeFixture f
@@ -163,9 +163,9 @@ addVertexAndFaceToBorderTest = do
     it "is valid polygon mesh" $ do
       either id show (isValidPolygonMesh g') `shouldBe` "True"
 
-joinVertexInteriorTest :: forall a g v h e f p. SurfaceFixtureC a g v h e f p => Spec
+joinVertexInteriorTest :: forall a g. SurfaceFixtureC a g => Spec
 joinVertexInteriorTest = do
-  f <- runIO (surfaceFixture3 @a @g @v @h @e @f @p)
+  f <- runIO (surfaceFixture3 @a @g)
   describe "joinVertexInteriorTest" $ do
     testFaceFixture f
     let g = faceFixture f
@@ -185,9 +185,9 @@ joinVertexInteriorTest = do
     it "valid poylygon mesh" $ do
       either id show (isValidPolygonMesh g') `shouldBe` "True"
 
-joinVertexExteriorTest1 :: forall a g v h e f p. SurfaceFixtureC a g v h e f p => Spec
+joinVertexExteriorTest1 :: forall a g. SurfaceFixtureC a g => Spec
 joinVertexExteriorTest1 = do
-  f <- runIO (surfaceFixture3 @a @g @v @h @e @f @p)
+  f <- runIO (surfaceFixture3 @a @g)
   describe "joinVertexExteriorTest1" $ do
     testFaceFixture f
     let g = faceFixture f
@@ -210,9 +210,9 @@ joinVertexExteriorTest1 = do
     it "valid poylygon mesh" $ do
       either id show (isValidPolygonMesh g') `shouldBe` "True"
 
-joinVertexExteriorTest2 :: forall a g v h e f p. SurfaceFixtureC a g v h e f p => Spec
+joinVertexExteriorTest2 :: forall a g. SurfaceFixtureC a g => Spec
 joinVertexExteriorTest2 = do
-  f <- runIO (surfaceFixture3 @a @g @v @h @e @f @p)
+  f <- runIO (surfaceFixture3 @a @g)
   describe "joinVertexExteriorTest2" $ do
     testFaceFixture f
     let g = faceFixture f
@@ -235,9 +235,9 @@ joinVertexExteriorTest2 = do
     it "valid poylygon mesh" $ do
       either id show (isValidPolygonMesh g') `shouldBe` "True"
 
-splitVertexTest :: forall a g v h e f p. SurfaceFixtureC a g v h e f p => Spec
+splitVertexTest :: forall a g. SurfaceFixtureC a g => Spec
 splitVertexTest = do
-  f <- runIO (surfaceFixture3 @a @g @v @h @e @f @p)
+  f <- runIO (surfaceFixture3 @a @g)
   describe "splitVertexTest" $ do
     testFaceFixture f
     let g = faceFixture f
@@ -256,9 +256,9 @@ splitVertexTest = do
     it "valid poylygon mesh" $ do
       either id show (isValidPolygonMesh g') `shouldBe` "True"
 
-splitJoinVertexInverseTest :: forall a g v h e f p. SurfaceFixtureC a g v h e f p => Spec
+splitJoinVertexInverseTest :: forall a g. SurfaceFixtureC a g => Spec
 splitJoinVertexInverseTest = do
-  f <- runIO (surfaceFixture3 @a @g @v @h @e @f @p)
+  f <- runIO (surfaceFixture3 @a @g)
   describe "splitJoinVertexInverseTest" $ do
     testFaceFixture f
     let g = faceFixture f
@@ -283,9 +283,9 @@ splitJoinVertexInverseTest = do
     it "valid poylygon mesh" $ do
       either id show (isValidPolygonMesh g3) `shouldBe` "True"
 
-joinLoopTest :: forall a g v h e f p. SurfaceFixtureC a g v h e f p => Spec
+joinLoopTest :: forall a g. SurfaceFixtureC a g => Spec
 joinLoopTest = do
-  f <- runIO (surfaceFixture4 @a @g @v @h @e @f @p)
+  f <- runIO (surfaceFixture4 @a @g)
   describe "joinLoopTest" $ do
     testHalfedgeFixture f
     let g = halfedgeFixture f
@@ -293,9 +293,9 @@ joinLoopTest = do
     it "valid poylygon mesh" $ do
       either id show (isValidPolygonMesh g') `shouldBe` "True"
 
-splitLoopTest :: forall a g v h e f p. SurfaceFixtureC a g v h e f p => Spec
+splitLoopTest :: forall a g. SurfaceFixtureC a g => Spec
 splitLoopTest = do
-  f <- runIO (surfaceFixture8 @a @g @v @h @e @f @p)
+  f <- runIO (surfaceFixture8 @a @g)
   describe "splitLoopTest" $ do
     testHalfedgeFixture f
     let g = halfedgeFixture f
@@ -309,9 +309,9 @@ splitLoopTest = do
     it "valid poylygon mesh" $ do
       either id show (isValidPolygonMesh g') `shouldBe` "True"
 
-splitFaceTest :: forall a g v h e f p. SurfaceFixtureC a g v h e f p => Spec
+splitFaceTest :: forall a g. SurfaceFixtureC a g => Spec
 splitFaceTest = do
-  f <- runIO (surfaceFixture6 @a @g @v @h @e @f @p)
+  f <- runIO (surfaceFixture6 @a @g)
   describe "splitFaceTest" $ do
     testHalfedgeFixture f
     let g = halfedgeFixture f
@@ -325,9 +325,9 @@ splitFaceTest = do
     it "valid poylygon mesh" $ do
       either id show (isValidPolygonMesh g') `shouldBe` "True"
 
-makeHoleTest :: forall a g v h e f p. SurfaceFixtureC a g v h e f p => Spec
+makeHoleTest :: forall a g. SurfaceFixtureC a g => Spec
 makeHoleTest = do
-  f <- runIO (surfaceFixture7 @a @g @v @h @e @f @p)
+  f <- runIO (surfaceFixture7 @a @g)
   describe "makeHoleTest" $ do
     testHalfedgeFixture f
     let g = halfedgeFixture f

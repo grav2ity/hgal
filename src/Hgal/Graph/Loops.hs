@@ -8,26 +8,26 @@ import qualified Hgal.Graph.ClassM as M
 import qualified Hgal.Graph.LoopsM as M
 
 
-nextAroundTarget :: HalfedgeGraph g v h e
-                 => g -> h -> h
+nextAroundTarget :: HalfedgeGraph g
+                 => g -> H g -> H g
 nextAroundTarget g = opposite g . next g
 
-prevAroundTarget :: HalfedgeGraph g v h e
-                 => g -> h -> h
+prevAroundTarget :: HalfedgeGraph g
+                 => g -> H g -> H g
 prevAroundTarget g = prev g . opposite g
 
-nextAroundSource :: HalfedgeGraph g v h e
-                 => g -> h -> h
+nextAroundSource :: HalfedgeGraph g
+                 => g -> H g -> H g
 nextAroundSource g = next g . opposite g
 
-prevAroundSource :: HalfedgeGraph g v h e
-                 => g -> h -> h
+prevAroundSource :: HalfedgeGraph g
+                 => g -> H g -> H g
 prevAroundSource g = opposite g . prev g
 
 
-distance :: HalfedgeGraph g v h e
-         => Eq h
-         => g -> (g -> h -> h) -> h -> h -> Maybe Int
+distance :: HalfedgeGraph g
+         => Eq (H g)
+         => g -> (g -> H g -> H g) -> H g -> H g -> Maybe Int
 distance g f h1 h2 = worker h1 0
   where
     worker hx d =
@@ -68,42 +68,42 @@ distance g f h1 h2 = worker h1 0
 -------------------------------------------------------------------------------
 -- gets circular vector of all elements
 
-halfedgesAroundTarget :: M.HalfedgeGraph (State g) g v h e
-                      => Eq h
-                      => g -> h -> CircularVector h
+halfedgesAroundTarget :: M.HalfedgeGraph (State g) g
+                      => Eq (H g)
+                      => g -> H g -> CircularVector (H g)
 halfedgesAroundTarget g h = evalState (M.halfedgesAroundTarget h) g
 
-halfedgesAroundSource :: M.HalfedgeGraph (State g) g v h e
-                      => Eq h
-                      => g -> h -> CircularVector h
+halfedgesAroundSource :: M.HalfedgeGraph (State g) g
+                      => Eq (H g)
+                      => g -> H g -> CircularVector (H g)
 halfedgesAroundSource g h = evalState (M.halfedgesAroundSource h) g
 
-halfedgesAroundFace :: M.HalfedgeGraph (State g) g v h e
-                    => Eq h
-                    => g -> h -> CircularVector h
+halfedgesAroundFace :: M.HalfedgeGraph (State g) g
+                    => Eq (H g)
+                    => g -> H g -> CircularVector (H g)
 halfedgesAroundFace g h = evalState (M.halfedgesAroundFace h) g
 
-facesAroundTarget :: M.FaceGraph (State g) g v h e f
-                  => Eq h
-                  => g -> h -> CircularVector f
+facesAroundTarget :: M.FaceGraph (State g) g
+                  => Eq (H g)
+                  => g -> H g -> CircularVector (F g)
 facesAroundTarget g h = evalState (M.facesAroundTarget h) g
 
-facesAroundFace :: M.FaceGraph (State g) g v h e f
-                => Eq h
-                => g -> h -> CircularVector f
+facesAroundFace :: M.FaceGraph (State g) g
+                => Eq (H g)
+                => g -> H g -> CircularVector (F g)
 facesAroundFace g h = evalState (M.facesAroundFace h) g
 
-verticesAroundTarget :: M.HalfedgeGraph (State g) g v h e
-                     => Eq h
-                     => g -> h -> CircularVector v
+verticesAroundTarget :: M.HalfedgeGraph (State g) g
+                     => Eq (H g)
+                     => g -> H g -> CircularVector (V g)
 verticesAroundTarget g h = evalState (M.verticesAroundTarget h) g
 
-verticesAroundFace :: M.HalfedgeGraph (State g) g v h e
-                   => Eq h
-                   => g -> h -> CircularVector v
+verticesAroundFace :: M.HalfedgeGraph (State g) g
+                   => Eq (H g)
+                   => g -> H g -> CircularVector (V g)
 verticesAroundFace g h = evalState (M.verticesAroundFace h) g
 
-edgesAroundFace :: M.HalfedgeGraph (State g) g v h e
-                => Eq h
-                => g -> h -> CircularVector e
+edgesAroundFace :: M.HalfedgeGraph (State g) g
+                => Eq (H g)
+                => g -> H g -> CircularVector (E g)
 edgesAroundFace g h = evalState (M.edgesAroundFace h) g
