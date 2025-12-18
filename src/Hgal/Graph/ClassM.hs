@@ -108,10 +108,6 @@ class
   halfedges :: g -> m [Halfedge g]
   edges :: g -> m [Edge g]
 
-  nullVertex :: g -> m (Vertex g)
-  nullHalfedge :: g -> m (Halfedge g)
-  nullEdge :: g -> m (Edge g)
-
   default edge :: Pure.HalfedgeGraph g
                => MonadState g m
                => Halfedge g -> m (Edge g)
@@ -163,21 +159,6 @@ class
                 => g -> m [Edge g]
   edges _ = gets Pure.edges
 
-  default nullVertex :: Pure.HalfedgeGraph g
-                     => MonadState g m
-                     => g -> m (Vertex g)
-  nullVertex _ = gets Pure.nullVertex
-
-  default nullHalfedge :: Pure.HalfedgeGraph g
-                       => MonadState g m
-                       => g -> m (Halfedge g)
-  nullHalfedge _ = gets Pure.nullHalfedge
-
-  default nullEdge :: Pure.HalfedgeGraph g
-                   => MonadState g m
-                   => g -> m (Edge g)
-  nullEdge _ = gets Pure.nullEdge
-
 
 class
   ( HalfedgeGraph m g,
@@ -221,17 +202,17 @@ class
 
   faces :: g -> m [Face g]
 
-  nullFace :: g -> m (Face g)
+  outerFace :: g -> m (Face g)
 
   default faces :: Pure.FaceGraph g
                 => MonadState g m
                 => g -> m [Face g]
   faces _ = gets Pure.faces
 
-  default nullFace :: Pure.FaceGraph g
+  default outerFace :: Pure.FaceGraph g
                    => MonadState g m
                    => g -> m (Face g)
-  nullFace _ = gets Pure.nullFace
+  outerFace _ = gets Pure.outerFace
 
 
 class

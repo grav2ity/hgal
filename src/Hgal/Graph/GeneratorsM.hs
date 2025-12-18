@@ -55,10 +55,10 @@ makeTriangle g p0 p1 p2 = do
   setTarget h0' v0
   setTarget h1' v1
   setTarget h2' v2
-  nullF <- nullFace g
-  setFace h0' nullF
-  setFace h1' nullF
-  setFace h2' nullF
+  outerF <- outerFace g
+  setFace h0' outerF
+  setFace h1' outerF
+  setFace h2' outerF
 
   replaceProperty g v0 p0
   replaceProperty g v1 p1
@@ -126,11 +126,11 @@ formQuad g v0 v1 v2 v3 = do
   setTarget h1' v1
   setTarget h2' v2
   setTarget h3' v3
-  nullF <- nullFace g
-  setFace h0' nullF
-  setFace h1' nullF
-  setFace h2' nullF
-  setFace h3' nullF
+  outerF <- outerFace g
+  setFace h0' outerF
+  setFace h1' outerF
+  setFace h2' outerF
+  setFace h3' outerF
   opposite h3'
 
 

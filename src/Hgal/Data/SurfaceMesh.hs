@@ -737,10 +737,6 @@ instance Graph.HalfedgeGraph (SurfaceMesh v h e f) where
   halfedges = halfedges
   edges = edges
 
-  nullVertex _ = nullE
-  nullHalfedge _ = nullE
-  nullEdge _ = nullE
-
 instance Graph.MutableHalfedgeGraph (SurfaceMesh v h e f) where
   setTarget = setTarget
   setNext = setNext
@@ -750,7 +746,7 @@ instance Graph.MutableHalfedgeGraph (SurfaceMesh v h e f) where
 instance Graph.FaceGraph (SurfaceMesh v h e f) where
   faces = faces
 
-  nullFace _ = nullE
+  outerFace _ = nullE
 
 instance Graph.MutableFaceGraph (SurfaceMesh v h e f) where
   addFace = addFace

@@ -8,7 +8,7 @@ import Hgal.Graph.ClassM
 
 setBorder :: MutableFaceGraph m g
           => g -> H g -> m ()
-setBorder g h = setFace h =<< nullFace g
+setBorder g h = setFace h =<< outerFace g
 
 copy :: MutableFaceGraph m g
      => g -> H g -> m (H g)
@@ -84,24 +84,24 @@ exactNumFaces = return . length <=< faces
 isIsolated :: HalfedgeGraph m g
            => Eq (H g)
            => g -> V g -> m Bool
-isIsolated g v = liftM2 (==) (halfedge v) (nullHalfedge g)
+isIsolated g v = liftM (== 0) (degree v)
 
 adjustIncomingHalfedge :: MutableHalfedgeGraph m g
                        => FaceGraph m g
                        => (Eq (V g), Eq (H g), Eq (F g))
                        => g -> V g -> m ()
 adjustIncomingHalfedge g v = do
-  h <- halfedge v
-  nullH <- nullHalfedge g
-  nullF <- nullFace g
-  if h == nullH then return ()
+  vD <- degree v
+  outerF <- outerFace g
+  if vD == 0 then return ()
     else do
+      h <- halfedge v
       tar <- target h
       h' <- if tar == v then return h
               else opposite h >>= \o -> setHalfedge v o >> return o
       let worker hx = do
             f <- face h
-            if f == nullF then setHalfedge v h
+            if f == outerF then setHalfedge v h
               else do
                 n <- (opposite <=< next) hx
                 when (hx /= h') (worker n)

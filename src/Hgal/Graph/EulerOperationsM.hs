@@ -36,34 +36,35 @@ addFace g vs = do
 
   uvs <- forM indicesTuple
            (\(i, ii) -> halfedgeVV (vertices V.! i) (vertices V.! ii))
-  nullF <- nullFace g
-  nullH <- nullHalfedge g
+  outerF <- outerFace g
 
   let
-    (halfedges, isNew) = V.unzip . V.fromList $ maybe (nullH, True) (, False) <$> uvs
+    halfedges = V.fromList $ uvs
+    halfedgesTuple = [(halfedges V.! i, halfedges V.! ii) | (i, ii) <- indicesTuple ]
+    isNew i = (isNothing <$> halfedges) V.! i
 
-    checkVertexCount = if n <= 2 then Nothing else Just ()
-    checkVerticesU = if nubOrd vList /= vList then Nothing else Just ()
+    checkVertexCount = guard (n > 2)
+    checkVerticesU = guard (nubOrd vList == vList)
     checkVertex v = do
-      p1 <- isIsolated g v
-      p2 <- isBorder v
-      return $ if p1 || p2 then Just () else Nothing
+      p1 <- lift $ isIsolated g v
+      p2 <- lift $ isBorder v
+      guard (p1 || p2)
     checkHalfedge i = do
-      p <- isBorder h
-      return $ if isNew V.! i || p then Just () else Nothing
-        where h = halfedges V.! i
-    allCheck = (MaybeT . pure $ checkVertexCount >> checkVerticesU) >>
-               lift (forM vertices checkVertex) >>
-               lift (forM indices checkHalfedge)
+      case (halfedges V.! i) of
+        Nothing -> return ()
+        Just h -> do
+          b <- lift $ isBorder h
+          guard b
 
-    bothOld (i, ii) = not $ (isNew V.! i) || (isNew V.! ii)
+    allCheck = checkVertexCount >> checkVerticesU >>
+               forM vertices checkVertex >>
+               forM indices checkHalfedge
 
-    reLink = forM indicesTuple $ \(i, ii) -> do
-      if not $ bothOld (i, ii) then return []
-        else do
-          let
-            innerPrev = halfedges V.! i
-            innerNext = halfedges V.! ii
+    bothOld (i, ii) = not $ (isNew i) || (isNew ii)
+
+    -- matches on (Just, Just) when both halfedges were already in the graph
+    reLink = forM [(p, n) | (Just p, Just n) <- halfedgesTuple]
+      $ \(innerPrev, innerNext) -> do
           p <- lift $ next innerPrev
           if p == innerNext then return []
             else do
@@ -88,14 +89,15 @@ addFace g vs = do
                          , (innerPrev, innerNext) ]
 
     createMissingEdges = forM indicesTuple $ \(i, ii) -> do
-      when (isNew V.! i) $ do
+      when (isNew i) $ do
         ne <- lift $ addEdge g (vertices V.! i) (vertices V.! ii)
         he <- lift $ do
           h <- halfedge ne
           s <- source h
-          return $ assert (h /= nullH && s == vertices V.! i) h
-        modify (V.modify (\vec -> VM.write vec i he))
-        lift $ (setFace ?? nullF) =<< opposite he
+          -- return $ assert (h /= nullH && s == vertices V.! i) h
+          return $ assert (s == vertices V.! i) h
+        modify (V.modify (\vec -> VM.write vec i (Just he)))
+        lift $ (setFace ?? outerF) =<< opposite he
 
     setupHalfedgesF halfedges' (i, ii) = do
       let
@@ -109,28 +111,29 @@ addFace g vs = do
           outerNext <- opposite innerPrev
           let innerLink = (innerPrev, innerNext)
           if
-            | (isNew V.! i) && (isNew V.! ii) -> do
-              hv <- halfedge v
-              nullH <- nullHalfedge g
-              bh <- isBorder hv
-              hv' <- if hv == nullH || bh then return hv
-                else do
-                  hAroundV <- halfedgesAroundTarget hv
-                  r <- findMOf traversed isBorder hAroundV
-                  return $ fromMaybe nullH r
-              if hv' == nullH
-                then do
+            | (isNew i) && (isNew ii) -> do
+              hv <- runMaybeT $ do
+                vDeg <- lift $ degree v
+                guard (vDeg /= 0)
+                h <- lift $ halfedge v
+                bh <- lift $ isBorder v
+                if (not bh) then do
+                  hAroundV <- lift $ halfedgesAroundTarget h
+                  MaybeT $ findMOf traversed isBorder hAroundV
+                else return h
+              case hv of
+                Nothing -> do
                   setHalfedge v outerPrev
                   return [innerLink, (outerPrev, outerNext)]
-                else do
+                Just (hv') -> do
                   let borderPrev' = hv'
                   borderNext' <- next borderPrev'
                   return [innerLink, (borderPrev', outerNext), (outerPrev, borderNext')]
-            | (isNew V.! i) -> do
+            | (isNew i) -> do
               borderPrev <- prev innerNext
               setHalfedge v borderPrev
               return [innerLink, (borderPrev, outerNext)]
-            | (isNew V.! ii) -> do
+            | (isNew ii) -> do
               borderNext <- next innerPrev
               setHalfedge v outerPrev
               return [innerLink, (outerPrev, borderNext)]
@@ -138,8 +141,9 @@ addFace g vs = do
 
   r <- runMaybeT $ allCheck >> reLink
   case r of
-    Nothing -> return nullF
-    Just nextCache -> execStateT createMissingEdges halfedges >>= \halfedges' ->
+    Nothing -> return outerF
+    -- !!!! assert catMaybes preserves V length
+    Just nextCache -> execStateT createMissingEdges halfedges >>= return . V.catMaybes >>= \halfedges' ->
       do
         f <- Graph.addFace g
         setHalfedge f (halfedges' V.! (n - 1))
@@ -552,7 +556,7 @@ joinFace g h = do
   removeTip gprev
 
   (unless ?? remove f2) =<< isBorder hop
-  fnull <- isBorder h
+  isB <- isBorder h
 
   let
     worker hx = when (hx /= gprev) $ do
@@ -561,7 +565,7 @@ joinFace g h = do
       worker n
   worker hprev
 
-  unless fnull (setHalfedge f hprev)
+  unless isB (setHalfedge f hprev)
   (setHalfedge ?? hprev) =<< target hprev
   (setHalfedge ?? gprev) =<< target gprev
 

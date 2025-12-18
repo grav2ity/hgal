@@ -56,10 +56,6 @@ class
   halfedges :: g -> [Halfedge g]
   edges :: g -> [Edge g]
 
-  nullVertex :: g -> Vertex g
-  nullHalfedge :: g -> Halfedge g
-  nullEdge :: g -> Edge g
-
 class
   ( HalfedgeGraph g,
     RemovableElement g (Vertex g),
@@ -81,7 +77,7 @@ class
 
   faces :: g -> [Face g]
 
-  nullFace :: g -> Face g
+  outerFace :: g -> Face g
 
 class
   ( FaceGraph g,

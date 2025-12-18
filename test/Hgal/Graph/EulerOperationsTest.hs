@@ -52,7 +52,7 @@ testFaceFixture f = do
   let g = faceFixture f
   it "valid fixture" $ do
     either id show (isValidPolygonMesh g) `shouldBe` "True"
-    notElem (nullVertex g) (($ f) <$> [u, v, w, x, y, z]) `shouldBe` True
+    all (\x -> degree g x /= 0) (($ f) <$> [u, v, w, x, y, z]) `shouldBe` True
 
 testHalfedgeFixture :: FaceGraph g
                     => M.FaceGraph (State g) g
@@ -62,7 +62,7 @@ testHalfedgeFixture f = do
   let g = halfedgeFixture f
   it "valid fixture" $ do
     either id show (isValidPolygonMesh g) `shouldBe` "True"
-    notElem (nullHalfedge g) (($ f) <$> [h1, h2, h3]) `shouldBe` True
+    all (\x -> degree g x /= 0) (($ f) <$> [h1, h2, h3]) `shouldBe` True
 
 joinFaceTest :: forall a g. SurfaceFixtureC a g => Spec
 joinFaceTest = do
@@ -127,11 +127,11 @@ removeFaceTest2 = do
     it "edges count" $ do
       exactNumEdges g' `shouldBe` 7
     it "halfedges have border face" $ do
-      all ((== nullFace g') . face g') (halfedgesAroundFace g' e') `shouldBe` True
+      all ((== outerFace g') . face g') (halfedgesAroundFace g' e') `shouldBe` True
     it "faces count" $ do
       exactNumFaces g' `shouldBe` 3
     it "face removed" $ do
-      face g e' == nullFace g `shouldBe` True
+      face g e' == outerFace g `shouldBe` True
     it "valid poylygon mesh" $ do
       either id show (isValidPolygonMesh g') `shouldBe` "True"
 
@@ -244,7 +244,7 @@ splitVertexTest = do
         h1 = fromJust $ halfedgeVV g (w f) (y f)
         h2 = fromJust $ halfedgeVV g (z f) (y f)
     it "fixture validity" $ do
-      face g h2 `shouldBe` nullFace g
+      face g h2 `shouldBe` outerFace g
     let (e', g') = Euler.splitVertex g h1 h2
     it "vertex count" $ do
       exactNumVertices g' `shouldBe` 7
