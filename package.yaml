@@ -74,8 +74,8 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - hgal
+    - hspec
     - tasty
-
     - tasty-discover >= 4.2.4
     - tasty-hspec
     build-tools:

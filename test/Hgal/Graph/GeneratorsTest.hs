@@ -7,6 +7,7 @@ module Hgal.Graph.GeneratorsTest where
 import Linear (V3(..), zero)
 import Test.Tasty
 import Test.Tasty.Hspec
+import Test.Hspec
 
 import Hgal.Graph.Class
 import Hgal.Graph.Fixtures

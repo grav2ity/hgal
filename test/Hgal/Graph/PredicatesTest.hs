@@ -4,10 +4,12 @@
 
 module Hgal.Graph.PredicatesTest where
 
+import Control.Monad
 import Control.Monad.State
 import Linear (V3(..))
 import Test.Tasty
 import Test.Tasty.Hspec
+import Test.Hspec
 
 import Hgal.Graph.Class
 import qualified Hgal.Graph.ClassM as M

@@ -5,6 +5,7 @@ import Data.Traversable
 import Linear
 import Test.Tasty
 import Test.Tasty.Hspec
+import Test.Hspec
 
 import Hgal.Data.SurfaceMesh
 import Hgal.Graph.Loops

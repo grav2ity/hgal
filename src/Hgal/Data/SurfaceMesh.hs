@@ -41,6 +41,7 @@ module Hgal.Data.SurfaceMesh
 
 import Control.Exception
 import Control.Lens hiding (point)
+import Control.Monad (join)
 import Control.Monad.State
 import Data.Bifunctor
 import Data.Bits
@@ -102,14 +103,21 @@ class Element a where
   isBorder :: SurfaceMesh v h e f -> a -> Bool
 
   isIsolated :: SurfaceMesh v h e f -> a -> Bool
+  default isIsolated :: Element Halfedge =>
+                        SurfaceMesh v h e f -> a -> Bool
   isIsolated sm = (== nullE) . halfedge sm
 
   isRemoved :: SurfaceMesh v h e f -> a -> Bool
 
   degree :: SurfaceMesh v h e f -> a -> Int
+  default degree :: Element Halfedge =>
+                    Element Vertex =>
+                    SurfaceMesh v h e f -> a -> Int
   degree sm = degree sm . vertex sm . halfedge sm
 
   vertex :: SurfaceMesh v h e f -> a -> Vertex
+  default vertex :: Element Halfedge =>
+                    SurfaceMesh v h e f -> a -> Vertex
   vertex sm = vertex sm . halfedge sm
 
   halfedge :: SurfaceMesh v h e f -> a -> Halfedge
@@ -120,6 +128,8 @@ class Element a where
   edge sm = (\(Halfedge i) -> Edge i) . halfedge sm
 
   face :: SurfaceMesh v h e f -> a -> Face
+  default face :: Element Halfedge =>
+                  SurfaceMesh v h e f -> a -> Face
   face sm = face sm . halfedge sm
 
   {- | Next vertex in a loop.

@@ -1,15 +1,16 @@
 module Hgal.Data.Property where
 
 import Control.Lens
+import Data.Kind (Type)
 import Data.Proxy
 import qualified Data.Vector as V
 
 import Hgal.Graph.Class
 
-type family Vp g :: *
-type family Hp g :: *
-type family Ep g :: *
-type family Fp g :: *
+type family Vp g :: Type
+type family Hp g :: Type
+type family Ep g :: Type
+type family Fp g :: Type
 
 
 class PropertyGraph g where

@@ -1,12 +1,13 @@
 module Hgal.Graph.Class where
 
 -- import Hgal.Data.Property
+import Data.Kind (Type)
 
 
-type family Vertex g :: *
-type family Halfedge g :: *
-type family Edge g :: *
-type family Face g :: *
+type family Vertex g :: Type
+type family Halfedge g :: Type
+type family Edge g :: Type
+type family Face g :: Type
 
 type V g = Vertex g
 type H g = Halfedge g
