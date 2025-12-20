@@ -32,37 +32,21 @@ makeTriangle g p0 p1 p2 = do
   h0 <- halfedge =<< addEdge g
   h1 <- halfedge =<< addEdge g
   h2 <- halfedge =<< addEdge g
-  setNext h0 h1
-  setNext h1 h2
-  setNext h2 h0
-  setTarget h0 v1
-  setTarget h1 v2
-  setTarget  h2 v0
-  setHalfedge v1 h0
-  setHalfedge v2 h1
-  setHalfedge v0 h2
+  mapM_ (uncurry setNext) [(h0, h1), (h1, h2), (h2, h0)]
+  mapM_ (uncurry setTarget) [(h0, v1), (h1, v2), (h2, v0)]
+  mapM_ (uncurry setHalfedge) [(v1, h0), (v2, h1), (v0, h2)]
   f <- addFace g
-  setFace h0 f
-  setFace h1 f
-  setFace h2 f
+  mapM_ (setFace ?? f) [h0, h1, h2]
   setHalfedge f h0
   h0' <- opposite h0
   h1' <- opposite h1
   h2' <- opposite h2
-  setNext h0' h2'
-  setNext h2' h1'
-  setNext h1' h0'
-  setTarget h0' v0
-  setTarget h1' v1
-  setTarget h2' v2
+  mapM_ (uncurry setNext) [(h0', h2'), (h2', h1'), (h1', h0')]
+  mapM_ (uncurry setTarget) [(h0', v0), (h1', v1), (h2', v2)]
   outerF <- outerFace g
-  setFace h0' outerF
-  setFace h1' outerF
-  setFace h2' outerF
+  mapM_ (setFace ?? outerF) [h0', h1', h2']
 
-  replaceProperty g v0 p0
-  replaceProperty g v1 p1
-  replaceProperty g v2 p2
+  mapM_ (uncurry (replaceProperty g)) [(v0, p0), (v1, p1), (v2, p2)]
 
   opposite h2'
 
@@ -79,58 +63,28 @@ makeQuad :: MutableFaceGraph m g
          -> p   -- ^ p3
          -> m (H g) -- ^ the non-border halfedge that has the target vertex associated with `p0`
 makeQuad g p0 p1 p2 p3 = do
-  v0 <- addVertex g
-  v1 <- addVertex g
-  v2 <- addVertex g
-  v3 <- addVertex g
-  replaceProperty g v0 p0
-  replaceProperty g v1 p1
-  replaceProperty g v2 p2
-  replaceProperty g v3 p3
+  vs <- replicateM 4 (addVertex g)
+  let [v0, v1, v2, v3] = vs
+  mapM_ (uncurry (replaceProperty g)) [(v0, p0), (v1, p1), (v2, p2), (v3, p3)]
   formQuad g v0 v1 v2 v3
 
 formQuad :: MutableFaceGraph m g
          => g -> V g -> V g -> V g -> V g -> m (H g)
 formQuad g v0 v1 v2 v3 = do
-  h0 <- halfedge =<< addEdge g
-  h1 <- halfedge =<< addEdge g
-  h2 <- halfedge =<< addEdge g
-  h3 <- halfedge =<< addEdge g
-  setNext h0 h1
-  setNext h1 h2
-  setNext h2 h3
-  setNext h3 h0
-  setTarget h0 v1
-  setTarget h1 v2
-  setTarget h2 v3
-  setTarget h3 v0
-  setHalfedge v1 h0
-  setHalfedge v2 h1
-  setHalfedge v3 h2
-  setHalfedge v0 h3
+  hs <- replicateM 4 (halfedge =<< addEdge g)
+  let [h0, h1, h2, h3] = hs
+  mapM_ (uncurry setNext) [(h0, h1), (h1, h2), (h2, h3), (h3, h0)]
+  mapM_ (uncurry setTarget) [(h0, v1), (h1, v2), (h2, v3), (h3, v0)]
+  mapM_ (uncurry setHalfedge) [(v1, h0), (v2, h1), (v3, h2), (v0, h3)]
   f <- addFace g
-  setFace h0 f
-  setFace h1 f
-  setFace h2 f
-  setFace h3 f
+  mapM_ (setFace ?? f) [h0, h1, h2, h3]
   setHalfedge f h0
-  h0' <- opposite h0
-  h1' <- opposite h1
-  h2' <- opposite h2
-  h3' <- opposite h3
-  setNext h0' h3'
-  setNext h3' h2'
-  setNext h2' h1'
-  setNext h1' h0'
-  setTarget h0' v0
-  setTarget h1' v1
-  setTarget h2' v2
-  setTarget h3' v3
+  hs' <- mapM opposite hs
+  let [h0', h1', h2', h3'] = hs'
+  mapM_ (uncurry setNext) [(h0', h3'), (h3', h2'), (h2', h1'), (h1', h0')]
+  mapM_ (uncurry setTarget) [(h0', v0), (h1', v1), (h2', v2), (h3', v3)]
   outerF <- outerFace g
-  setFace h0' outerF
-  setFace h1' outerF
-  setFace h2' outerF
-  setFace h3' outerF
+  mapM_ (setFace ?? outerF) [h0', h1', h2', h3']
   opposite h3'
 
 
@@ -149,55 +103,28 @@ makeTetrahedron :: MutableFaceGraph m g
                        -- with `p0`, in the face with the vertices with the
                        -- points `p0`, `p1`, and `p2`
 makeTetrahedron g p0 p1 p2 p3 = do
-  v0 <- addVertex g
-  v2 <- addVertex g -- this and the next line are switched to keep points in order
-  v1 <- addVertex g
-  v3 <- addVertex g
-  h0 <- halfedge =<< addEdge g
-  h1 <- halfedge =<< addEdge g
-  h2 <- halfedge =<< addEdge g
-  setNext h0 h1
-  setNext h1 h2
-  setNext h2 h0
-  setTarget h0 v1
-  setTarget h1 v2
-  setTarget h2 v0
-  setHalfedge v1 h0
-  setHalfedge v2 h1
-  setHalfedge v0 h2
+  vs <- replicateM 4 (addVertex g)
+  let [v0, v2, v1, v3] = vs -- v2 and v1 are switched to keep points in order
+  hs <- replicateM 6 (halfedge =<< addEdge g)
+  let [h0, h1, h2, h3, h4, h5] = hs
+  mapM_ (uncurry setNext) [(h0, h1), (h1, h2), (h2, h0)]
+  mapM_ (uncurry setTarget) [(h0, v1), (h1, v2), (h2, v0)]
+  mapM_ (uncurry setHalfedge) [(v1, h0), (v2, h1), (v0, h2)]
   f <- addFace g
-  setFace h0 f
-  setFace h1 f
-  setFace h2 f
+  mapM_ (setFace ?? f) [h0, h1, h2]
   setHalfedge f h0
-  h0' <- opposite h0
-  h1' <- opposite h1
-  h2' <- opposite h2
-  setNext h0' h2'
-  setNext h2' h1'
-  setNext h1' h0'
-  setTarget h0' v0
-  setTarget h1' v1
-  setTarget h2' v2
-  h3 <- halfedge =<< addEdge g
-  h4 <- halfedge =<< addEdge g
-  h5 <- halfedge =<< addEdge g
-  setTarget h3 v3
-  setTarget h4 v3
-  setTarget h5 v3
+
+  mapM_ (uncurry setTarget) [(h3, v3), (h4, v3), (h5, v3)]
   setHalfedge v3 h3
-  setNext h0' h3
-  setNext h1' h4
-  setNext h2' h5
-  setNext h3 =<< opposite h4
-  setNext h4 =<< opposite h5
-  setNext h5 =<< opposite h3
-  (setNext ?? h0') =<< opposite h4
-  (setNext ?? h1') =<< opposite h5
-  (setNext ?? h2') =<< opposite h3
-  (setTarget ?? v0) =<< opposite h3
-  (setTarget ?? v1) =<< opposite h4
-  (setTarget ?? v2) =<< opposite h5
+
+  hs' <- mapM opposite [h0, h1, h2, h3, h4, h5]
+  let [h0', h1', h2', h3', h4', h5'] = hs'
+
+  mapM_ (uncurry setNext) [(h0', h2'), (h2', h1'), (h1', h0')]
+  mapM_ (uncurry setTarget) [(h0', v0), (h1', v1), (h2', v2)]
+  mapM_ (uncurry setNext) [(h0', h3), (h1', h4), (h2', h5)]
+  mapM_ (uncurry setNext) [(h3, h4'), (h4, h5'), (h5, h3'), (h4', h0'), (h5', h1'), (h3', h2')]
+  mapM_ (uncurry setTarget) [(h3', v0), (h4', v1), (h5', v2)]
 
   f2 <- addFace g
   setHalfedge f2 h0'
@@ -215,10 +142,8 @@ makeTetrahedron g p0 p1 p2 p3 = do
   setFace h5 f4
   (setFace ?? f4) =<< opposite h3
 
-  replaceProperty g v0 p0
-  replaceProperty g v1 p2 -- this and the next line are switched to reorient the surface
-  replaceProperty g v2 p1
-  replaceProperty g v3 p2
+  -- p1 and p2 are switched to reorient the surface
+  mapM_ (uncurry (replaceProperty g)) [(v0, p0), (v1, p2), (v2, p1), (v3, p3)]
 
   opposite h2'
 
