@@ -1,6 +1,5 @@
 module Hgal.Graph.Class where
 
--- import Hgal.Data.Property
 import Data.Kind (Type)
 
 
@@ -13,6 +12,7 @@ type V g = Vertex g
 type H g = Halfedge g
 type E g = Edge g
 type F g = Face g
+
 
 class Element g a where
   isBorder :: g -> a -> Bool
@@ -33,7 +33,6 @@ class GetFace g a where
 
 class SetFace g a where
   setFace :: g -> a -> Face g -> g
-
 
 
 class
@@ -89,8 +88,3 @@ class
   ) => MutableFaceGraph g where
 
   addFace :: g -> (Face g, g)
-
-
-newtype Point a = Point a
-
--- class Property g (Point v) p => PointGraph g v p where

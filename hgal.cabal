@@ -51,7 +51,6 @@ library
       MultiParamTypeClasses
       RankNTypes
       TemplateHaskell
-      TupleSections
       TypeFamilies
   build-depends:
       base >=4.7 && <5
@@ -87,7 +86,6 @@ test-suite hgal-test
       MultiParamTypeClasses
       RankNTypes
       TemplateHaskell
-      TupleSections
       TypeFamilies
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-tool-depends:

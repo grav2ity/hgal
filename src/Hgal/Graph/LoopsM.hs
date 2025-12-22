@@ -137,18 +137,6 @@ loop m g f h = worker h
       n <- m hx
       when (n /= h) (worker n)
 
--- loopC :: Monad m
---       => Eq (H g)
---       => (H g -> m (H g))
---       -> (H g -> m a)
---       -> H g
---       -> H g
---       -> m (Maybe (a, H g))
--- loopC m f h hx = do
---   n <- m hx
---   a <- f n
---   if n /= h then return (Just (a, n)) else return Nothing
-
 loopC :: Monad m
       => Eq a
       => (a -> m a)

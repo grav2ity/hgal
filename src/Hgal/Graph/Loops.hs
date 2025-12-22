@@ -35,36 +35,6 @@ distance g f h1 h2 = worker h1 0
       in if n == h1 then Nothing
            else if n == h2 then Just (d + 1) else worker n (d + 1)
 
-
--- nextAroundTarget :: HalfedgeGraph g
---                  => g
---                  -> Halfedge g
---                  -> Halfedge g
--- nextAroundTarget g = opposite g . next g
-
--- halfedgeAroundTarget :: Eq (Halfedge g)
---                      => HalfedgeGraph g
---                      => g
---                      -> (g -> Halfedge g -> Maybe (g, a))
---                      -> Halfedge g
---                      -> (g, [a])
--- halfedgeAroundTarget = loop nextAroundTarget
-
--- loop :: Eq (Halfedge g)
---      => (g -> Halfedge g -> Halfedge g)
---      -> g
---      -> (g -> Halfedge g -> Maybe (g, a))
---      -> Halfedge g
---      -> (g, [a])
--- loop m g f h = worker g h []
---   where
---     worker gx hx ls =
---       let n = m gx hx
---       in case f gx hx of
---            Nothing -> (gx, ls)
---            Just (gx', a) -> if n == h then (gx', a:ls)
---                               else worker gx' n (a:ls)
-
 -------------------------------------------------------------------------------
 -- gets circular vector of all elements
 

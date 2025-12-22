@@ -20,10 +20,7 @@ module Hgal.Data.SurfaceMesh
   , halfedges
   , edges
   , faces
-  , points
-  , pointProperties
     -- * Construction
-    -- $construction
   , empty
   , addVertex
   , addEdge
@@ -50,6 +47,7 @@ import Data.Foldable (length, toList)
 import Data.IntMap (IntMap)
 import qualified Data.IntMap as IntMap
 import Data.Maybe
+import Data.Kind (Type)
 import Data.Sequence as Seq hiding (empty, length)
 import qualified Data.Sequence as Seq (empty)
 import Data.Tuple
@@ -58,20 +56,18 @@ import GHC.Generics (Generic)
 
 import qualified Hgal.Graph.Class as Graph
 import qualified Hgal.Graph.ClassM as GraphM
+import qualified Hgal.Graph.EulerOperations as Euler
 import Hgal.Graph.Loops
 import Hgal.Data.Property
 import qualified Hgal.Data.PropertyM as M
 
-import Hgal.Graph.Predicates (isValidPolygonMesh)
-import Debug.Trace
-import qualified Hgal.Graph.EulerOperations as Euler
-import qualified Hgal.Graph.EulerOperationsM as EulerM
-import qualified Hgal.Graph.GeneratorsM as GM
-import Linear
-import Data.Map (Map)
+-- import qualified Hgal.Graph.EulerOperationsM as EulerM
+-- import qualified Hgal.Graph.GeneratorsM as GM
+-- import Linear
+-- import Data.Map (Map)
 
 
-data family Connectivity a :: *
+data family Connectivity a :: Type
 
 {- | Convenience class for SurfaceMesh's graph elements.
 
@@ -89,8 +85,6 @@ class Element a where
   nullE = maxBound
 
   conn :: a -> Lens' (SurfaceMesh v h e f) (Connectivity a)
-
-  -- propertyOf :: Property s a p => a -> Lens' (SurfaceMesh v h e f) (Maybe p)
 
   hasValidIndex :: SurfaceMesh v h e f -> a -> Bool
   hasValidConnectivity :: SurfaceMesh v h e f -> a -> Either String Bool
@@ -179,7 +173,6 @@ data SurfaceMesh v h e f = SurfaceMesh
   { _vconn :: Seq (Connectivity Vertex)
   , _hconn :: Seq (Connectivity Halfedge)
   , _fconn :: Seq (Connectivity Face)
-  -- , _vpoint :: Seq (Maybe v)
   , _vprops :: Seq (Maybe v)
   , _hprops :: Seq (Maybe h)
   , _eprops :: Seq (Maybe e)
@@ -187,7 +180,6 @@ data SurfaceMesh v h e f = SurfaceMesh
   , _vremoved :: IntMap Bool
   , _eremoved :: IntMap Bool
   , _fremoved :: IntMap Bool
-  -- , _props :: d
   }
 
 makeLenses ''SurfaceMesh
@@ -214,7 +206,6 @@ instance Element Vertex where
   new = Vertex . numVertices
 
   conn (Vertex i) = vconn.singular (ix i)
-  -- propertyOf e = props.property e
 
   hasValidIndex sm (Vertex i) = i < numVertices sm
   hasValidConnectivity sm v
@@ -247,7 +238,6 @@ instance Element Halfedge where
   new = Halfedge . numHalfedges
 
   conn (Halfedge i) = hconn.singular (ix i)
-  -- propertyOf e = props.property e
 
   hasValidIndex sm (Halfedge i) = i < numHalfedges sm
 
@@ -275,8 +265,9 @@ instance Element Halfedge where
 
   isRemoved sm = isRemoved sm . edge sm
 
-  halfedge _ h = h
   vertex sm h = view (conn h.hV) sm
+  halfedge _ h = h
+  setHalfedge sm _ _ = sm
   face sm h = view (conn h.hF) sm
   next sm h = view (conn h.hN) sm
   prev sm h = view (conn h.hP) sm
@@ -287,7 +278,8 @@ instance Element Edge where
 
   new = Edge . numHalfedges
 
-  -- propertyOf e = props.property (div e 2)
+  hasValidConnectivity sm (Edge i) = collectErrors [hasValidConnectivity sm (Halfedge i),
+                                                    hasValidConnectivity sm (Halfedge (i + 1))]
 
   hasValidIndex sm (Edge i) = i < numEdges sm
 
@@ -302,6 +294,7 @@ instance Element Edge where
   isRemoved sm (Edge i) = fromMaybe False $ IntMap.lookup (div i 2) (_eremoved sm)
 
   halfedge _ (Edge i) = Halfedge i
+  setHalfedge sm _ _ = sm
   next sm = edge sm . next sm . halfedge sm
   prev sm = edge sm . prev sm . halfedge sm
 
@@ -312,7 +305,6 @@ instance Element Face where
   new = Face . numFaces
 
   conn (Face i) = fconn.singular (ix i)
-  -- propertyOf e = props.property e
 
   hasValidIndex sm (Face i) = i < numFaces sm
 
@@ -336,6 +328,8 @@ instance Element Face where
   halfedge sm f = view (conn f.fH) sm
   setHalfedge sm f h = set (conn f.fH) h sm
   face _ f = f
+  next sm = face sm . next sm . halfedge sm
+  prev sm = face sm . prev sm . halfedge sm
 
 
 empty :: SurfaceMesh v h e f
@@ -375,10 +369,6 @@ edges sm = fmap (`div` 2) <$> Prelude.filter (not . isRemoved sm) $
 faces :: SurfaceMesh v h e f -> [Face]
 faces sm = Prelude.filter (not . isRemoved sm) $
            Face <$> [0..numFaces sm - 1]
-
--- points :: Eq v => SurfaceMesh v h e f -> [Maybe v]
-points :: SurfaceMesh v h e f -> [Maybe v]
-points = toList . pointProperties
 
 -------------------------------------------------------------------------------
 -- Adding elements
@@ -510,7 +500,6 @@ merge sm sm2 =
      (_vremoved sm <> vremoved2)
      (_eremoved sm <> eremoved2)
      (_fremoved sm <> fremoved2)
-     -- (merged (_props sm) (_props sm2))
 
 instance Semigroup (SurfaceMesh v h e f) where
   (<>) = merge
@@ -536,7 +525,6 @@ instance Eq v => M.Property (St v h e f) (SurfaceMesh v h e f) Vertex v where
 
 instance Eq h => Property (SurfaceMesh v h e f) Halfedge h where
   property (Halfedge i) = hprops.lens (join . Seq.lookup i) (flip $ Seq.update i)
-  -- properties sm = V.fromList . toList $ _hprops sm
 
   find sm v = Halfedge <$> Seq.elemIndexL (Just v) (_hprops sm)
   findKeys sm f = Halfedge <$> Seq.findIndicesL (maybe False f) (_hprops sm)
@@ -545,7 +533,28 @@ instance Eq h => M.Property (St v h e f) (SurfaceMesh v h e f) Halfedge h where
   getProperty _ k = use (property k)
   adjustProperty _ f k = modifying (property k) (fmap f)
   replaceProperty _ k v = assign (property k) (Just v)
-  -- properties sm = return $ properties sm
+
+instance Eq e => Property (SurfaceMesh v h e f) Edge e where
+  property (Edge i) = eprops.lens (join . Seq.lookup i) (flip $ Seq.update i)
+
+  find sm v = Edge <$> Seq.elemIndexL (Just v) (_eprops sm)
+  findKeys sm f = Edge <$> Seq.findIndicesL (maybe False f) (_eprops sm)
+
+instance Eq e => M.Property (St v h e f) (SurfaceMesh v h e f) Edge e where
+  getProperty _ k = use (property k)
+  adjustProperty _ f k = modifying (property k) (fmap f)
+  replaceProperty _ k v = assign (property k) (Just v)
+
+instance Eq f => Property (SurfaceMesh v h e f) Face f where
+  property (Face i) = fprops.lens (join . Seq.lookup i) (flip $ Seq.update i)
+
+  find sm v = Face <$> Seq.elemIndexL (Just v) (_fprops sm)
+  findKeys sm f = Face <$> Seq.findIndicesL (maybe False f) (_fprops sm)
+
+instance Eq f => M.Property (St v h e f) (SurfaceMesh v h e f) Face f where
+  getProperty _ k = use (property k)
+  adjustProperty _ f k = modifying (property k) (fmap f)
+  replaceProperty _ k v = assign (property k) (Just v)
 
 vertexProperties :: SurfaceMesh v h e f -> V.Vector (Maybe v)
 vertexProperties sm = V.fromList . toList $ _vprops sm
@@ -558,10 +567,6 @@ edgeProperties sm = V.fromList . toList $ _eprops sm
 
 faceProperties :: SurfaceMesh v h e f -> V.Vector (Maybe f)
 faceProperties sm = V.fromList . toList $ _fprops sm
-
--- pointProperties :: Eq v => SurfaceMesh v h e f -> V.Vector (Maybe v)
-pointProperties :: SurfaceMesh v h e f -> V.Vector (Maybe v)
-pointProperties = vertexProperties
 
 -------------------------------------------------------------------------------
 -- Full integrity check
@@ -692,19 +697,19 @@ fH g (FaceConnectivity v) = FaceConnectivity <$> g v
 
 instance Graph.Element (SurfaceMesh v h e f) Vertex where
   isBorder = isBorder
-  isValid g = isValid g
+  isValid = isValid
   degree = degree
 instance Graph.Element (SurfaceMesh v h e f) Halfedge where
   isBorder = isBorder
-  isValid g = isValid g
+  isValid = isValid
   degree = degree
 instance Graph.Element (SurfaceMesh v h e f) Edge where
   isBorder = isBorder
-  isValid g = isValid g
+  isValid = isValid
   degree = degree
 instance Graph.Element (SurfaceMesh v h e f) Face where
   isBorder = isBorder
-  isValid g = isValid g
+  isValid = isValid
   degree = degree
 
 instance Graph.RemovableElement (SurfaceMesh v h e f) Vertex where
@@ -786,52 +791,40 @@ instance GraphM.MutableHalfedgeGraph (St v h e f) (SurfaceMesh v h e f)
 instance GraphM.FaceGraph (St v h e f) (SurfaceMesh v h e f)
 instance GraphM.MutableFaceGraph (St v h e f) (SurfaceMesh v h e f)
 
--- instance Eq v => Graph.PointGraph (SurfaceMesh v h e f) Vertex v
--- instance Eq v => GraphM.PointGraph (St v h e f) (SurfaceMesh v h e f) Vertex v
-
 -------------------------------------------------------------------------------
 -- Garbage temp tests
 
--- foo :: SurfaceMesh (V3 Double) ()
+-- foo :: SurfaceMesh () () () ()
 -- foo =
---   let sm = empty ()
+--   let sm = empty
 --       f = do
 --             v1 <- GraphM.addVertex sm
 --             v2 <- GraphM.addVertex sm
 --             v3 <- GraphM.addVertex sm
 --             EulerM.addFace sm [v1, v2, v3]
---             -- return ()
 --   in execState f sm
 
--- foo1 :: SurfaceMesh () ()
+-- foo1 :: SurfaceMesh () () () ()
 -- foo1 =
---   let sm = empty ()
+--   let sm = empty
 --       (v1, sm0) = Graph.addVertex sm
 --       (v2, sm1) = Graph.addVertex sm0
 --       (v3, sm2) = Graph.addVertex sm1
 --       (_, sm3)  = Euler.addFace sm2 [v1, v2, v3]
 --   in sm3
 
--- newtype MyProps2 = MyProps2 (IntMap Int, IntMap (Map String String))
-
--- instance Property MyProps2 Vertex Int where
---   property (Vertex i) g (MyProps2 m) = MyProps2 <$> (_1.at i) g m
-
--- instance Property MyProps2 Edge (Map String String) where
---   property (Edge i) g (MyProps2 m) = MyProps2 <$> (_2.at i) g m
-
--- foo2 :: SurfaceMesh (V3 Double) MyProps2
+-- foo2 :: SurfaceMesh (V3 Double) () (Map String String) ()
 -- foo2 =
---   let sm = empty (MyProps2 (IntMap.empty, IntMap.empty)) :: SurfaceMesh (V3 Double) MyProps2
+--   let sm = empty
 --       f = do
---            -- GM.makeRegularPrism sm 3 (V3 0 0 0) 7 13 True
+--             -- GM.makeRegularPrism sm 3 (V3 0 0 0) 7 13 True
 --             -- GM.makeTriangle sm (V3 2 2 2) (V3 0 0 0) (V3 1 1 1)
---             GM.makeGrid sm 3 3 (\x y -> fromIntegral <$> (V3 x y 0)) True
---             -- v1 <- GraphM.addVertex sm
---             -- GraphM.addEdge sm
---             -- propertyOf (Vertex 0) ?= 7
---             -- propertyOf (Edge 0) ?= Map.fromList [("foo", "bar")]
---             -- (propertyOf (Edge 0)._Just.at "foo") ?= "alice"
+--             GM.makeGrid sm 3 3 (\x y -> fromIntegral <$> V3 x y 0) True
+--             v1 <- GraphM.addVertex sm
+--             GraphM.addEdge sm
+--             property (Vertex 0) ?= 7
+--             property (Edge 0) ?= Data.Map.fromList [("foo", "bar")]
+--             (property (Edge 0)._Just.at "foo") ?= "alice"
 --   in execState f sm
 
 {- $construction

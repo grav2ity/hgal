@@ -41,7 +41,7 @@ default-extensions:
 - MultiParamTypeClasses
 - RankNTypes
 - TemplateHaskell
-- TupleSections
+# - TupleSections
 - TypeFamilies
 
 

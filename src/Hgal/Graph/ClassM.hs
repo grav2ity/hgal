@@ -1,11 +1,10 @@
 module Hgal.Graph.ClassM where
 
-import Control.Lens(Iso'())
 import Control.Monad.State
 
 import qualified Hgal.Graph.Class as Pure
 import Hgal.Graph.Class (Vertex, Halfedge, Edge, Face)
-import Hgal.Data.PropertyM
+
 
 type V g = Vertex g
 type H g = Halfedge g
@@ -229,7 +228,3 @@ class
                   => MonadState g m
                   => g -> m (Face g)
   addFace _ = state Pure.addFace
-
-
-class Property m g (Pure.Point v) p => PointGraph m g v p where
-
