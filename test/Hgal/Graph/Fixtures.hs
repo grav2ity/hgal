@@ -1,5 +1,4 @@
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeApplications #-}
 
 module Hgal.Graph.Fixtures where
 
@@ -12,7 +11,7 @@ import Hgal.Data.Property
 import qualified Hgal.Data.PropertyM as M
 import Hgal.Data.SurfaceMesh (SurfaceMesh)
 import qualified Hgal.Data.SurfaceMesh as SurfaceMesh
-import qualified Hgal.Data.SurfaceMesh.IO as SurfaceMesh.IO
+import qualified Hgal.Data.SurfaceMesh.Import as SurfaceMesh.Import
 import Hgal.Graph.Class
 import qualified Hgal.Graph.ClassM as M
 import Hgal.Graph.Loops
@@ -21,7 +20,7 @@ class FromOFF a where
   fromOFF :: String -> IO a
 
 instance (Num a, Read a) => FromOFF (SurfaceMesh (V3 a) () () ()) where
-  fromOFF = SurfaceMesh.IO.fromOFF
+  fromOFF fileName = SurfaceMesh.Import.fromOFF <$> readFile fileName
 
 data FaceFixture g = FaceFixture
   { faceFixture :: g

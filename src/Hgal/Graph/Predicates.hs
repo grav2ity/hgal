@@ -55,7 +55,7 @@ isTetrahedron g h1 =
         || opposite g (next g h5) /= h6
         || opposite g (next g h6) /= h4
         || any not (isTriangle g <$> [h1, h4, h5, h6])
-        || or (isBorder g <$> [h1, h4, h5, h6])
+        || any (isBorder g) [h1, h4, h5, h6]
 
 isHexahedron :: HalfedgeGraph g => Eq (H g) => g -> H g -> Bool
 isHexahedron g h1 =

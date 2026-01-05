@@ -41,7 +41,6 @@ default-extensions:
 - MultiParamTypeClasses
 - RankNTypes
 - TemplateHaskell
-# - TupleSections
 - TypeFamilies
 
 
@@ -50,19 +49,19 @@ library:
   exposed-modules:
     - Hgal.Graph.Class
     - Hgal.Graph.ClassM
+    - Hgal.Graph.EulerOperations
+    - Hgal.Graph.EulerOperationsM
     - Hgal.Graph.Generators
     - Hgal.Graph.GeneratorsM
     - Hgal.Graph.Helpers
     - Hgal.Graph.HelpersM
-    - Hgal.Graph.EulerOperations
-    - Hgal.Graph.EulerOperationsM
     - Hgal.Graph.Loops
     - Hgal.Graph.LoopsM
     - Hgal.Graph.Predicates
     - Hgal.Data.Property
     - Hgal.Data.PropertyM
     - Hgal.Data.SurfaceMesh
-    - Hgal.Data.SurfaceMesh.IO
+    - Hgal.Data.SurfaceMesh.Import
 
 tests:
   hgal-test:

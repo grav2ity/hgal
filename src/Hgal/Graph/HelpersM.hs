@@ -21,7 +21,7 @@ copy g h = do
   setTarget hopp =<< target hopp -- ??
   setFace res =<< face h
   setFace ropp =<< face hopp
-  -- note that we cannot call set_next as it then would call set_prev on the  original
+  -- note that we cannot call setNext as it then would set previous on the original
   return res
 
 setVertexHalfedge :: MutableHalfedgeGraph m g
@@ -84,7 +84,7 @@ exactNumFaces = return . length <=< faces
 isIsolated :: HalfedgeGraph m g
            => Eq (H g)
            => g -> V g -> m Bool
-isIsolated g v = liftM (== 0) (degree v)
+isIsolated g v = fmap (== 0) (degree v)
 
 adjustIncomingHalfedge :: MutableHalfedgeGraph m g
                        => FaceGraph m g

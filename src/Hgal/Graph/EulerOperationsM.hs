@@ -2,6 +2,7 @@
 
 module Hgal.Graph.EulerOperationsM where
 
+import Control.Applicative ((<|>))
 import Control.Exception
 import Control.Lens (both, findMOf, forMOf_, traversed, (??))
 import Control.Monad
@@ -39,28 +40,23 @@ addFace g vs = do
   outerF <- outerFace g
 
   let
-    halfedges = V.fromList $ uvs
+    halfedges = V.fromList uvs
     halfedgesTuple = [(halfedges V.! i, halfedges V.! ii) | (i, ii) <- indicesTuple ]
     isNew i = (isNothing <$> halfedges) V.! i
 
     checkVertexCount = guard (n > 2)
-    checkVerticesU = guard (nubOrd vList == vList)
-    checkVertex v = do
-      p1 <- lift $ isIsolated g v
-      p2 <- lift $ isBorder v
-      guard (p1 || p2)
-    checkHalfedge i = do
-      case (halfedges V.! i) of
+    checkVerticesU = guard (length (nubOrd vList) == n)
+    checkVertex v = (lift (isIsolated g v) >>= guard) <|> (lift (isBorder v) >>= guard)
+    checkHalfedge i =
+      case halfedges V.! i of
         Nothing -> return ()
-        Just h -> do
-          b <- lift $ isBorder h
-          guard b
+        Just h -> lift (isBorder h) >>= guard
 
     allCheck = checkVertexCount >> checkVerticesU >>
                forM vertices checkVertex >>
                forM indices checkHalfedge
 
-    bothOld (i, ii) = not $ (isNew i) || (isNew ii)
+    bothOld (i, ii) = not $ isNew i || isNew ii
 
     -- matches on (Just, Just) when both halfedges were already in the graph
     reLink = forM [(p, n) | (Just p, Just n) <- halfedgesTuple]
@@ -111,13 +107,13 @@ addFace g vs = do
           outerNext <- opposite innerPrev
           let innerLink = (innerPrev, innerNext)
           if
-            | (isNew i) && (isNew ii) -> do
+            | isNew i && isNew ii -> do
               hv <- runMaybeT $ do
                 vDeg <- lift $ degree v
                 guard (vDeg /= 0)
                 h <- lift $ halfedge v
                 bh <- lift $ isBorder v
-                if (not bh) then do
+                if not bh then do
                   hAroundV <- lift $ halfedgesAroundTarget h
                   MaybeT $ findMOf traversed isBorder hAroundV
                 else return h
@@ -125,7 +121,7 @@ addFace g vs = do
                 Nothing -> do
                   setHalfedge v outerPrev
                   return [innerLink, (outerPrev, outerNext)]
-                Just (hv') -> do
+                Just hv' -> do
                   let borderPrev' = hv'
                   borderNext' <- next borderPrev'
                   return [innerLink, (borderPrev', outerNext), (outerPrev, borderNext')]
@@ -142,8 +138,8 @@ addFace g vs = do
   r <- runMaybeT $ allCheck >> reLink
   case r of
     Nothing -> return outerF
-    -- !!!! assert catMaybes preserves V length
-    Just nextCache -> execStateT createMissingEdges halfedges >>= return . V.catMaybes >>= \halfedges' ->
+    Just nextCache -> execStateT createMissingEdges halfedges >>=
+      (\x -> assert (V.all isJust x) (return $ V.catMaybes x)) >>= \halfedges' ->
       do
         f <- Graph.addFace g
         setHalfedge f (halfedges' V.! (n - 1))
@@ -210,7 +206,7 @@ joinLoop g h1 h2 = do
   isB2 <- isBorder h1
   f1 <- face h1
   f2 <- face h2
-  _ <- assert (isB1 || f1 /= f2) $ return ()
+  assert (isB1 || f1 /= f2) $ return ()
   unless isB1 (remove f1)
   unless isB2 (remove f2)
 
@@ -239,7 +235,7 @@ joinLoop g h1 h2 = do
 
       if hn /= h1 then worker hn gn else return gn
   h2' <- worker h1 h2
-  _ <- assert (h2' == h2) $ return ()
+  assert (h2' == h2) $ return ()
   let
     worker3 hx = do
       n <- next hx
@@ -258,8 +254,8 @@ splitLoop g h i j = do
   toh <- (target <=< opposite) h
   toi <- (target <=< opposite) i
   toj <- (target <=< opposite) j
-  _ <- assert (h /= i && h /= j && i /= j) $ return ()
-  _ <- assert (th /= toi && ti /= toj && tj /= toh) $ return ()
+  assert (h /= i && h /= j && i /= j) $ return ()
+  assert (th /= toi && ti /= toj && tj /= toh) $ return ()
 
   hnew <- copy g h
   inew <- copy g i
@@ -522,7 +518,7 @@ addFaceToBorder g h1 h2 = do
   isB1 <- isBorder h1
   isB2 <- isBorder h2
   nh1 <- next h1
-  _ <- assert (isB1 && isB2 && h1 /= h2 && nh1 /= h2) (return ())
+  assert (isB1 && isB2 && h1 /= h2 && nh1 /= h2) (return ())
   f <- Graph.addFace g
   e <- Graph.addEdge g
   newh <- halfedge e

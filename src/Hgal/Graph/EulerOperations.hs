@@ -5,6 +5,10 @@ import Control.Monad.State
 import Hgal.Graph.ClassM
 import Hgal.Graph.EulerOperationsM as EulerM
 
+-- note that ClassM.(*)Graph (State g) g
+-- can be derived for free once Class.(*)Graph g is available
+
+
 addFace :: Foldable t
         => MutableFaceGraph (State g) g
         => (Ord (V g), Eq (H g), Eq (F g))

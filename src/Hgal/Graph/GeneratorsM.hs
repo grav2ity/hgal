@@ -371,7 +371,7 @@ makeGrid g i j coordF triangulated = do
     [ addVertex g >>= \v -> replaceProperty g v (coordF x y) >> return v
     | x <- [0..i], y <- [0..j]
     ]
-  sequence
+  sequence_
     [ if triangulated then
         Euler.addFace g [v0, v1, v3] >>
         Euler.addFace g [v1, v2, v3]

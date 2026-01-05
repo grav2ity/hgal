@@ -162,11 +162,13 @@ type instance Graph.Face (SurfaceMesh v h e f) = Face
 
 {- | Halfedge graph based Mesh data structure
 
-holding point data v assocaited with Vertex
+holding custom data
 
-and arbitrary data sore d with additional
+v, h, e, f
 
-properties for Vertices, Halfedges, Edges and Faces
+associated with
+
+Vertex, Halfedge, Edge, Face
 
 -}
 data SurfaceMesh v h e f = SurfaceMesh
@@ -387,7 +389,7 @@ addEdge :: SurfaceMesh v h e f -> (Edge, SurfaceMesh v h e f)
 addEdge sm =
   let sm' = hconn %~ (addh . addh) $ sm
         where addh = (snoc ?? HalfedgeConnectivity nullE nullE nullE nullE)
-      sm'' = (hprops %~ (addp . addp)) $ (eprops %~ addp') $ sm'
+      sm'' = (hprops %~ (addp . addp)) $ (eprops %~ addp') sm'
         where addp = (snoc ?? Nothing)
               addp' = (snoc ?? Nothing)
   in (new sm, sm'')
@@ -409,7 +411,6 @@ newVertex sm v =
   --that's not exactly right
   let (n, sm') = addVertex sm
   in (vprops %~ (\(vs :|> _) -> vs :|> Just v) $ sm', n)
-  -- in (sm', n)
 
 {- | Create Face from Vertices already present in the Mesh.
 
@@ -725,8 +726,6 @@ instance Graph.SetHalfedge (SurfaceMesh v h e f) Vertex where
   setHalfedge = setHalfedge
 instance Graph.GetHalfedge (SurfaceMesh v h e f) Edge where
   halfedge = halfedge
-instance Graph.SetHalfedge (SurfaceMesh v h e f) Edge where
-  setHalfedge = setHalfedge
 instance Graph.GetHalfedge (SurfaceMesh v h e f) Face where
   halfedge = halfedge
 instance Graph.SetHalfedge (SurfaceMesh v h e f) Face where
@@ -780,7 +779,6 @@ instance GraphM.RemovableElement (St v h e f) Face
 instance GraphM.GetHalfedge (St v h e f) (SurfaceMesh v h e f) Vertex
 instance GraphM.SetHalfedge (St v h e f) (SurfaceMesh v h e f) Vertex
 instance GraphM.GetHalfedge (St v h e f) (SurfaceMesh v h e f) Edge
-instance GraphM.SetHalfedge (St v h e f) (SurfaceMesh v h e f) Edge
 instance GraphM.GetHalfedge (St v h e f) (SurfaceMesh v h e f) Face
 instance GraphM.SetHalfedge (St v h e f) (SurfaceMesh v h e f) Face
 instance GraphM.GetFace (St v h e f) (SurfaceMesh v h e f) Halfedge

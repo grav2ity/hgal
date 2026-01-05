@@ -15,9 +15,12 @@ type F g = Face g
 
 
 class Element g a where
-  isBorder :: g -> a -> Bool
-  isValid :: g -> a -> Either String Bool
+  -- return 0 for Elements with no associated Halfedge
   degree :: g -> a -> Int
+  isBorder :: g -> a -> Bool
+
+  -- optional, for testing purposes
+  isValid :: g -> a -> Either String Bool
 
 class Element g a => RemovableElement g a where
   remove :: g -> a -> g
@@ -50,6 +53,7 @@ class
   next :: g -> Halfedge g -> Halfedge g
   prev :: g -> Halfedge g -> Halfedge g
 
+  -- return Halfedge if it exists
   halfedgeVV :: g -> Vertex g -> Vertex g -> Maybe (Halfedge g)
 
   vertices :: g -> [Vertex g]
@@ -63,6 +67,7 @@ class
     SetHalfedge g (Vertex g)
   ) => MutableHalfedgeGraph g where
   setTarget :: g -> Halfedge g -> Vertex g -> g
+  -- set next for Halfedge1 AND previous for Halfedge2
   setNext :: g -> Halfedge g -> Halfedge g -> g
 
   addVertex :: g -> (Vertex g, g)
